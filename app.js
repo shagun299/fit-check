@@ -193,7 +193,7 @@
   }
 
   function renderVisualHero() {
-    return "<section class='visual-hero'><div class='visual-hero-copy'><span class='eyebrow'>FITCHECK · YOUR DAILY RESET</span><h2>Build strength.<br>Keep your balance.</h2><p>Train with intention, eat with awareness and notice the progress you make every week.</p><span class='hero-stamp'>YOUR FITNESS, IN FOCUS <b>✦</b></span></div><div class='visual-hero-image'><img src='https://fuel-it-right.ghost.io/content/images/2025/09/protein.jpeg' alt='Balanced Indian meal with dal, rice, eggs and paneer' loading='lazy'></div></section>";
+    return "<section class='visual-hero'><div class='visual-hero-copy'><span class='eyebrow'>FITCHECK · YOUR DAILY RESET</span><h2>Build strength.<br>Keep your balance.</h2><p>Train with intention, eat with awareness and notice the progress you make every week.</p><span class='hero-stamp'>YOUR FITNESS, IN FOCUS <b>✦</b></span></div><div class='visual-hero-image'><img src='https://upload.wikimedia.org/wikipedia/commons/4/4d/Indian_Thali_2024.jpg' alt='Balanced Indian meal with dal, rice, eggs and paneer' loading='eager'></div></section>";
   }
 
   function renderCoachNotes() {
@@ -411,10 +411,10 @@
     const meals=todayMeals(),totals=nutritionTotals(meals),targets=state.targets,dates=[...new Set(state.meals.map(x=>x.date))].sort().reverse().slice(0,7);
     const foods=FOOD_LIBRARY.concat(state.customFoods);
     return "<div class='page-heading'><div><span class='eyebrow'>FUEL YOUR TRAINING</span><h1>Nutrition tracker</h1><p>Search your food library, save meals you repeat and plan ahead.</p></div><div class='heading-actions'><button class='btn btn-primary' data-action='add-meal'>＋ Custom meal</button></div></div>"+
-      "<section class='nutrition-visual-banner'><img src='https://cdn.shopify.com/s/files/1/0710/1707/0780/files/article-image_e35730d9-03e3-448c-a361-e2944b1e6970.jpg?v=1776342722' alt='Indian high-protein thali with dal, paneer, roti and rice' loading='lazy'><div><span class='eyebrow'>EVERYDAY FOOD · BETTER TRACKING</span><h2>60+ foods. More than just calories.</h2><p>See protein, carbs, fats, fibre and key vitamins and minerals before adding a meal.</p></div></section>"+
+      "<section class='nutrition-visual-banner'><img src='https://upload.wikimedia.org/wikipedia/commons/4/4d/Indian_Thali_2024.jpg' alt='Indian thali with roti, paneer, rice, dal and salad' loading='eager'><div><span class='eyebrow'>EVERYDAY FOOD · BETTER TRACKING</span><h2>110+ foods. More than just calories.</h2><p>See protein, carbs, fats, fibre and key vitamins and minerals before adding a meal.</p></div></section>"+
       "<div class='grid stats-grid'>"+statCard("Calories",Math.round(totals.calories),"kcal","Target: "+targets.calories+" kcal","◉")+statCard("Protein",round(totals.protein),"g","Target: "+targets.protein+" g","✳")+statCard("Carbohydrates",round(totals.carbs),"g","Target: "+targets.carbs+" g","⌁")+statCard("Fat",round(totals.fat),"g","Target: "+targets.fat+" g","◍")+"</div>"+
       "<section class='panel food-library-panel'><div class='panel-head'><div><h2>Food library</h2><div class='panel-sub'>60+ Indian and everyday foods with macros, fibre and selected vitamins and minerals.</div></div><button class='btn btn-secondary btn-small' data-action='add-custom-food'>＋ Custom food</button></div>"+
-      "<input class='search-input' id='food-search' type='search' placeholder='Search roti, rice, paneer, eggs, milk...' autocomplete='off'><div class='food-library-grid' id='food-library-grid'>"+foods.map(foodCard).join("")+"</div></section><p class='nutrition-source-note'>Reference sources: <a href='https://www.nin.res.in/ebooks/IFCT2017.pdf' target='_blank' rel='noopener'>ICMR–NIN Indian Food Composition Tables</a> and the <a href='https://www.anuvaad.org.in/indian-nutrient-databank/' target='_blank' rel='noopener'>Indian Nutrient Databank</a>. Figures are rounded estimates for the serving shown; recipes, brands and portion sizes change the actual values.</p>"+
+      "<input class='search-input' id='food-search' type='search' placeholder='Search roti, rice, paneer, eggs, milk...' autocomplete='off'><div class='food-library-grid' id='food-library-grid'>"+foods.map(foodCard).join("")+"</div></section><p class='nutrition-source-note'>Reference sources: <a href='https://www.nin.res.in/ebooks/IFCT2017.pdf' target='_blank' rel='noopener'>ICMR–NIN Indian Food Composition Tables</a> and the <a href='https://www.anuvaad.org.in/indian-nutrient-databank/' target='_blank' rel='noopener'>Indian Nutrient Databank</a>. Figures are rounded estimates for the serving shown; recipes, brands and portion sizes change the actual values. Thali photo by <a href='https://commons.wikimedia.org/wiki/File:Indian_Thali_2024.jpg' target='_blank' rel='noopener'>03Ani03</a>, licensed under <a href='https://creativecommons.org/licenses/by-sa/4.0/' target='_blank' rel='noopener'>CC BY-SA 4.0</a>.</p>"+
       "<div class='grid nutrition-two-col'><section class='panel'><div class='panel-head'><div><h2>Today's food diary</h2><div class='panel-sub'>"+prettyDate(dateKey(),{weekday:"long",day:"numeric",month:"long"})+" · "+meals.length+" entries</div></div><span class='tag'>TODAY</span></div>"+renderMealItems(meals,true)+"</section>"+
       "<section class='panel'><div class='panel-head'><div><h2>Macro targets</h2><div class='panel-sub'>Today's progress</div></div><button class='inline-link' data-page='settings'>Edit targets →</button></div><div class='macro-list'>"+macroRow("Calories",totals.calories,targets.calories,"","kcal")+macroRow("Protein",totals.protein,targets.protein,"","g")+macroRow("Carbs",totals.carbs,targets.carbs,"carbs","g")+macroRow("Fat",totals.fat,targets.fat,"fat","g")+"</div></section></div>"+
       "<section class='panel'><div class='panel-head'><div><h2>Saved meals</h2><div class='panel-sub'>One-tap logging for meals you often repeat</div></div></div>"+(state.savedMeals.length?"<div class='saved-meal-list'>"+state.savedMeals.map(savedMealCard).join("")+"</div>":emptyState("✳","No saved meals yet","Tick 'Save as quick meal' when adding a meal to keep it here."))+"</section>"+
@@ -483,7 +483,7 @@
   function renderProgressPhotos() {
     if(!state.progressPhotos.length)return emptyState("▧","No progress photos yet","Save a private monthly check-in photo to compare changes over time.","＋ Add progress photo","add-progress-photo");
     return "<div class='progress-photo-grid'>"+state.progressPhotos.slice().sort((a,b)=>b.date.localeCompare(a.date)).map(photo=>
-      "<article class='progress-photo-card'><img src='"+safe(photo.data)+"' alt='Private progress check-in from "+safe(prettyDate(photo.date))+"' loading='lazy'><div><strong>"+safe(photo.label)+"</strong><span>"+prettyDate(photo.date,{day:"numeric",month:"short",year:"numeric"})+"</span><button class='inline-link' data-action='delete-progress-photo' data-id='"+safe(photo.id)+"'>Remove</button></div></article>"
+      "<article class='progress-photo-card'><img src='"+safe(photo.data)+"' alt='Private progress check-in from "+safe(prettyDate(photo.date))+"' loading='eager'><div><strong>"+safe(photo.label)+"</strong><span>"+prettyDate(photo.date,{day:"numeric",month:"short",year:"numeric"})+"</span><button class='inline-link' data-action='delete-progress-photo' data-id='"+safe(photo.id)+"'>Remove</button></div></article>"
     ).join("")+"</div>";
   }
 
@@ -684,9 +684,24 @@
     state.measurements.push(item);saveState();closeModal();render();toast("Body measurements saved.");
   }
 
+  function setSidebarOpen(open) {
+    const sidebar = $("#sidebar");
+    const scrim = $("#sidebar-scrim");
+    const toggle = $("#menu-toggle");
+    const shouldOpen = Boolean(open) && window.matchMedia("(max-width: 720px)").matches;
+    sidebar.classList.toggle("open", shouldOpen);
+    document.body.classList.toggle("sidebar-open", shouldOpen);
+    if (scrim) scrim.hidden = !shouldOpen;
+    if (toggle) {
+      toggle.setAttribute("aria-expanded", String(shouldOpen));
+      toggle.setAttribute("aria-label", shouldOpen ? "Close workspace" : "Open workspace");
+      toggle.innerHTML = shouldOpen ? "×" : "☰";
+    }
+  }
+
   document.addEventListener("click",event=>{
     const page=event.target.closest("[data-page]");
-    if(page){event.preventDefault();currentPage=page.dataset.page;render();$("#sidebar").classList.remove("open");return;}
+    if(page){event.preventDefault();currentPage=page.dataset.page;render();setSidebarOpen(false);return;}
     const button=event.target.closest("[data-action]");
     if(!button)return;
     const action=button.dataset.action,id=button.dataset.id;
@@ -779,9 +794,17 @@
 
   $("#modal-close").addEventListener("click",closeModal);
   $("#modal-backdrop").addEventListener("click",event=>{if(event.target.id==="modal-backdrop")closeModal();});
-  $("#menu-toggle").addEventListener("click",()=>$("#sidebar").classList.toggle("open"));
+  $("#menu-toggle").addEventListener("click",()=>setSidebarOpen(!$("#sidebar").classList.contains("open")));
+  $("#sidebar-close").addEventListener("click",()=>setSidebarOpen(false));
+  $("#sidebar-scrim").addEventListener("click",()=>setSidebarOpen(false));
+  window.addEventListener("resize",()=>{if(window.innerWidth>720)setSidebarOpen(false);});
   $("#theme-toggle").addEventListener("click",()=>{state.theme=state.theme==="dark"?"light":"dark";saveState();render();});
-  document.addEventListener("keydown",event=>{if(event.key==="Escape"&&!$("#modal-backdrop").hidden)closeModal();});
+  document.addEventListener("keydown",event=>{
+    if(event.key==="Escape"){
+      if($("#sidebar").classList.contains("open"))setSidebarOpen(false);
+      if(!$("#modal-backdrop").hidden)closeModal();
+    }
+  });
 
   if("serviceWorker" in navigator && location.protocol.startsWith("http"))window.addEventListener("load",()=>navigator.serviceWorker.register("./sw.js").catch(()=>{}));
   window.FitCheckBridge = {
