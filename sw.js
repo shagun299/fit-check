@@ -1,4 +1,4 @@
-const CACHE_NAME = "fitcheck-shell-v1";
+const CACHE_NAME = "fitcheck-shell-v2";
 const APP_FILES = ["./", "./index.html", "./style.css", "./app.js", "./manifest.webmanifest"];
 
 self.addEventListener("install", event => {
@@ -25,5 +25,16 @@ self.addEventListener("fetch", event => {
       }
       return response;
     }).catch(() => caches.match("./index.html")))
+  );
+});
+self.addEventListener("notificationclick", event => {
+  event.notification.close();
+  event.waitUntil(
+    self.clients.matchAll({ type: "window", includeUncontrolled: true }).then(clients => {
+      for (const client of clients) {
+        if ("focus" in client) return client.focus();
+      }
+      if (self.clients.openWindow) return self.clients.openWindow("./");
+    })
   );
 });
