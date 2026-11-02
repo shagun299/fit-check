@@ -215,6 +215,7 @@ async function bootCloud() {
       import(base + "firebase-storage.js")
     ]);
     const app = appSdk.initializeApp(CONFIG);
+    window.FitCheckAuth = authSdk;
     auth = authSdk.getAuth(app);
     db = dbSdk.getFirestore(app);
     storage = storageSdk.getStorage(app);
@@ -277,8 +278,4 @@ window.FitCheckCloud = {
   getUser: () => currentUser ? { uid: currentUser.uid, email: currentUser.email, displayName: currentUser.displayName } : null,
   isConfigured: () => isConfigured
 };
-if (isConfigured) {
-  // Expose only the auth functions used by the Google sign-in UI.
-  import("https://www.gstatic.com/firebasejs/" + FITCHECK_FIREBASE_VERSION + "/firebase-auth.js").then(sdk => { window.FitCheckAuth = sdk; });
-}
 bootCloud();
