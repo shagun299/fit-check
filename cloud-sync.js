@@ -206,11 +206,19 @@ async function beginUserSync(user) {
       applyingRemote = false;
       queueSync(350);
     } else {
+      const localOnlyPhotos = (local.progressPhotos || []).filter(photo =>
+        !photo.url && typeof photo.data === "string" && photo.data.startsWith("data:")
+      );
+      const latestWithLocalPhotos = {
+        ...remote,
+        progressPhotos: mergeLists(localOnlyPhotos, remote.progressPhotos || [])
+      };
       applyingRemote = true;
-      bridge.applyCloudState(remote);
+      bridge.applyCloudState(latestWithLocalPhotos);
       applyingRemote = false;
       lastFingerprint = remoteHash;
-      paintStatus("Cloud sync is on", "Latest data received from your other device.", "online");
+      paintStatus("Cloud sync is on", "Latest data received from your other device." +
+        (localOnlyPhotos.length ? " Unuploaded progress photos remain safely on this device." : ""), localOnlyPhotos.length ? "warning" : "online");
     }
   }, error => {
     console.error("FitCheck sync listener:", error);
