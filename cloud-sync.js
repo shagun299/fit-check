@@ -15,6 +15,7 @@ let isWriting = false;
 let dirty = false;
 let applyingRemote = false;
 let lastFingerprint = "";
+let pendingPhotoUploads = 0;
 
 function cloneData(value) { return JSON.parse(JSON.stringify(value)); }
 function fingerprint(value) {
@@ -104,20 +105,30 @@ function photoDataToBlob(dataUrl) {
 async function prepareForCloud(snapshot) {
   const copy = cloneData(snapshot);
   const photos = [];
+  pendingPhotoUploads = 0;
+  const { ref: storageRef, uploadBytes, getDownloadURL } = await import("https://www.gstatic.com/firebasejs/" + FITCHECK_FIREBASE_VERSION + "/firebase-storage.js");
   for (const photo of copy.progressPhotos || []) {
-    let url = photo.url || "";
-    if (!url && photo.data && /^https?:\/\//i.test(photo.data)) url = photo.data;
-    if (!url && photo.data && photo.data.startsWith("data:")) {
-      const { ref: storageRef, uploadBytes, getDownloadURL } = await import("https://www.gstatic.com/firebasejs/" + FITCHECK_FIREBASE_VERSION + "/firebase-storage.js");
-      const objectRef = storageRef(storage, "users/" + currentUser.uid + "/progress-photos/" + encodeURIComponent(photo.id) + ".jpg");
-      await uploadBytes(objectRef, photoDataToBlob(photo.data), { contentType: "image/jpeg" });
-      url = await getDownloadURL(objectRef);
-      photo.url = url;
+    try {
+      let url = photo.url || "";
+      if (!url && photo.data && /^https?:\\/\\//i.test(photo.data)) url = photo.data;
+      if (!url && photo.data && photo.data.startsWith("data:")) {
+        const objectRef = storageRef(storage, "users/" + currentUser.uid + "/progress-photos/" + encodeURIComponent(photo.id) + ".jpg");
+        await uploadBytes(objectRef, photoDataToBlob(photo.data), { contentType: "image/jpeg" });
+        url = await getDownloadURL(objectRef);
+        photo.url = url;
+      }
+      if (url) photos.push({ id: photo.id, date: photo.date, label: photo.label, url });
+      else pendingPhotoUploads++;
+    } catch (error) {
+      console.warn("Progress photo remains on this device until cloud storage is available:", error);
+      pendingPhotoUploads++;
     }
-    photos.push({ id: photo.id, date: photo.date, label: photo.label, url });
   }
   copy.progressPhotos = photos;
-  if (JSON.stringify(copy.progressPhotos) !== JSON.stringify((snapshot.progressPhotos || []).map(p => ({ id:p.id,date:p.date,label:p.label,url:p.url || "" })))) {
+  const localPhotoState = (snapshot.progressPhotos || []).map(photo => ({
+    id: photo.id, date: photo.date, label: photo.label, url: photo.url || ""
+  }));
+  if (JSON.stringify(photos) !== JSON.stringify(localPhotoState)) {
     const localCopy = cloneData(snapshot);
     localCopy.progressPhotos = (localCopy.progressPhotos || []).map(photo => {
       const found = photos.find(item => item.id === photo.id);
@@ -142,7 +153,10 @@ async function writeCloudState() {
     });
     lastFingerprint = fingerprint(bridge.getState());
     dirty = false;
-    paintStatus("Cloud sync is on", "Signed in as " + currentUser.email + " · Your latest changes are saved.", "online");
+    paintStatus(pendingPhotoUploads ? "Fitness data synced · photos waiting" : "Cloud sync is on",
+      pendingPhotoUploads
+        ? "Your profile, food and workouts are synced. " + pendingPhotoUploads + " progress photo(s) remain on this device until Firebase Storage is enabled."
+        : "Signed in as " + currentUser.email + " · Your latest changes are saved.", pendingPhotoUploads ? "warning" : "online");
     if (fingerprint(bridge.getState()) !== fingerprint(starting) && !dirty) queueSync(250);
   } catch (error) {
     console.error("FitCheck cloud sync failed:", error);
@@ -256,7 +270,7 @@ async function signIn() {
   provider.setCustomParameters({ prompt: "select_account" });
   try { await signInWithPopup(auth, provider); }
   catch (error) {
-    if (["auth/popup-blocked","auth/popup-closed-by-user","auth/cancelled-popup-request"].includes(error.code)) {
+    if (["auth/popup-blocked","auth/operation-not-supported-in-this-environment"].includes(error.code)) {
       try { await signInWithRedirect(auth, provider); }
       catch (redirectError) { notify("Google sign-in could not open: " + redirectError.message); }
     } else notify("Google sign-in failed: " + error.message);
