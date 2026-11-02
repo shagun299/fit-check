@@ -9,7 +9,7 @@
     routines: [], savedMeals: [], customFoods: [], plannedMeals: [], measurements: [], progressPhotos: [], theme: "dark"
   };
 
-  const FOOD_LIBRARY = [
+  const FOOD_LIBRARY = window.FITCHECK_FOOD_LIBRARY || [
     {id:"roti",name:"Whole-wheat roti",serving:"1 medium",calories:110,protein:3.2,carbs:22,fat:1.2},
     {id:"rice",name:"Cooked rice",serving:"150 g",calories:195,protein:4,carbs:43,fat:0.4},
     {id:"dal",name:"Cooked dal",serving:"150 g",calories:160,protein:9,carbs:24,fat:3.5},
@@ -180,7 +180,7 @@
       "<div class='grid dashboard-grid'><div><section class='panel'><div class='panel-head'><div><h2>Nutrition at a glance</h2><div class='panel-sub'>Today's intake compared with your targets</div></div><button class='inline-link' data-page='nutrition'>View nutrition →</button></div><div class='macro-layout'><div class='calorie-ring'><svg viewBox='0 0 120 120' aria-hidden='true'><circle class='ring-track' cx='60' cy='60' r='50'></circle><circle class='ring-progress' cx='60' cy='60' r='50' stroke-dasharray='"+(circumference*pct/100)+" "+circumference+"'></circle></svg><div class='ring-center'><strong>"+Math.round(totals.calories).toLocaleString("en-IN")+"</strong><span>kcal eaten</span><small>"+Math.max(0,Math.round(targets.calories-totals.calories))+" kcal left</small></div></div><div class='macro-list'>"+macroRow("Protein",totals.protein,targets.protein,"","g")+macroRow("Carbs",totals.carbs,targets.carbs,"carbs","g")+macroRow("Fat",totals.fat,targets.fat,"fat","g")+"</div></div></section>"+
       "<section class='panel'><div class='panel-head'><div><h2>Today's meals</h2><div class='panel-sub'>"+meals.length+" entries added</div></div><button class='inline-link' data-action='add-meal'>＋ Add meal</button></div>"+renderMealItems(meals)+"</section>"+
       "<section class='panel'><div class='panel-head'><div><h2>Training rhythm</h2><div class='panel-sub'>Sessions across the last seven days</div></div><button class='inline-link' data-page='workouts'>Workout studio →</button></div>"+renderActivityBars()+"</section></div>"+
-      "<div><section class='panel'><div class='panel-head'><div><h2>Hydration</h2><div class='panel-sub'>Small sips, steady progress</div></div><span class='tag blue'>DAILY</span></div><div class='water-card'><div class='water-visual'>♧</div><div class='water-copy'><strong>"+(water/1000).toFixed(2)+"<small style='font-size:12px;color:#96a58e'> L</small></strong><p>of "+(targets.water/1000).toFixed(1)+" L daily target</p><div class='progress-track'><div class='progress-fill water' style='width:"+(targets.water?clamp(water/targets.water*100):0)+"%'></div></div></div></div><div class='water-actions'><button data-action='add-water' data-ml='250'>＋ 250 ml</button><button data-action='add-water' data-ml='500'>＋ 500 ml</button></div></section>"+
+      "<div><section class='panel'><div class='panel-head'><div><h2>Hydration</h2><div class='panel-sub'>Small sips, steady progress</div></div><span class='tag blue'>DAILY</span></div><div class='water-card'><div class='water-visual'>♧</div><div class='water-copy'><strong>"+(water/1000).toFixed(2)+"<small style='font-size:12px;color:#96a58e'> L</small></strong><p>of "+(targets.water/1000).toFixed(1)+" L daily target</p><div class='progress-track'><div class='progress-fill water' style='width:"+(targets.water?clamp(water/targets.water*100):0)+"%'></div></div></div></div><div class='water-glass-count'>💧 " + Math.floor(water/250) + " × 250 ml glasses logged</div><div class='water-actions'><button data-action='add-water' data-ml='250'>＋ 250 ml</button><button data-action='add-water' data-ml='500'>＋ 500 ml</button><button data-action='remove-water' data-ml='250' " + (water<250?"disabled":"") + ">− 250 ml</button><button data-action='clear-water' " + (water===0?"disabled":"") + ">Reset</button></div></section>"+
       "<section class='panel'><div class='panel-head'><div><h2>Today's training</h2><div class='panel-sub'>"+workouts.length+" session(s) logged</div></div><button class='inline-link' data-action='add-workout'>＋ Add</button></div>"+renderWorkoutItems(workouts,false)+"</section>"+
       renderWeeklySnapshot()+"</div></div>";
   }
@@ -603,7 +603,7 @@
   function weightForm() {
     return "<form id='weight-form'><div class='form-grid'><div class='form-field'><label>Weight ("+safe(state.profile.unit)+")</label><input name='weight' type='number' min='1' max='500' step='0.1' required placeholder='e.g. 66.0'></div><div class='form-field'><label>Date</label><input name='date' type='date' required value='"+dateKey()+"'></div><div class='form-field full'><label>Note</label><input name='note' maxlength='100' placeholder='e.g. Morning, before breakfast'></div></div><div class='modal-actions'><button type='button' class='btn btn-ghost' data-action='close-modal'>Cancel</button><button class='btn btn-primary' type='submit'>Save weigh-in</button></div></form>";
   }
-  function saveProfile(form) {const v=formValues(form);state.profile={...state.profile,name:v.name.trim(),height:v.height,currentWeight:v.currentWeight,unit:v.unit,goal:v.goal};saveState();render();toast("Profile updated.");}
+  function saveProfile(form) {const v=formValues(form);state.profile={...state.profile,name:v.name.trim(),height:v.height,currentWeight:v.currentWeight,unit:v.unit,goal:v.goal};const ok=saveState();render();if(ok)toast("Profile updated.");}
   function saveTargets(form) {const v=formValues(form);Object.keys(state.targets).forEach(k=>state.targets[k]=Math.max(0,num(v[k])));saveState();render();toast("Targets updated.");}
   function exportData() {
     const blob=new Blob([JSON.stringify({app:"FitCheck",version:2,exportedAt:new Date().toISOString(),data:state},null,2)],{type:"application/json"});
@@ -681,6 +681,8 @@
     if(action==="toggle-reminder"){const r=state.reminders.find(x=>x.id===id);if(r){r.enabled=!r.enabled;saveState();render();toast(r.enabled?"Reminder resumed.":"Reminder paused.");}}
     if(action==="delete-reminder"){state.reminders=state.reminders.filter(x=>x.id!==id);saveState();render();toast("Reminder deleted.");}
     if(action==="add-water"){const key=dateKey();state.waterByDate[key]=num(state.waterByDate[key])+num(button.dataset.ml);saveState();render();toast(button.dataset.ml+" ml water added.");}
+    if(action==="remove-water"){const key=dateKey();state.waterByDate[key]=Math.max(0,num(state.waterByDate[key])-num(button.dataset.ml));saveState();render();toast("Water entry reduced by "+button.dataset.ml+" ml.");}
+    if(action==="clear-water"){if(confirm("Remove all water entries for today?")){delete state.waterByDate[dateKey()];saveState();render();toast("Today's water entries cleared.");}}
     if(action==="calendar-prev"){calendarOffset--;render();}
     if(action==="calendar-next"){calendarOffset++;render();}
     if(action==="rest-preset"){restPreset=num(button.dataset.seconds);restRemaining=restPreset;stopRestTimer();updateRestTimer();}
@@ -739,5 +741,13 @@
   document.addEventListener("keydown",event=>{if(event.key==="Escape"&&!$("#modal-backdrop").hidden)closeModal();});
 
   if("serviceWorker" in navigator && location.protocol.startsWith("http"))window.addEventListener("load",()=>navigator.serviceWorker.register("./sw.js").catch(()=>{}));
+  window.FitCheckBridge = {
+    getState:()=>clone(state),
+    getEmptyState:()=>clone(STARTER),
+    applyCloudState:incoming=>{state={...clone(STARTER),...(incoming||{}),profile:{...STARTER.profile,...((incoming||{}).profile||{})},targets:{...STARTER.targets,...((incoming||{}).targets||{})}};localStorage.setItem(STORAGE_KEY,JSON.stringify(state));render();},
+    notify:toast,
+    openSettings:()=>{currentPage="settings";render();}
+  };
   render();checkReminders();window.setInterval(checkReminders,15000);
+  window.setInterval(()=>{coachNoteIndex=(coachNoteIndex+1)%COACH_NOTES.length;const note=COACH_NOTES[coachNoteIndex];const title=$("#coach-note-title"),copy=$("#coach-note-text"),count=$("#coach-note-count");if(title&&copy){title.textContent=note.title;copy.textContent=note.text;if(count)count.textContent="NOTE "+String(coachNoteIndex+1).padStart(2,"0");}},5500);
 })();
