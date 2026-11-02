@@ -1,5 +1,5 @@
 const CACHE_NAME = "fitcheck-shell-v6";
-const APP_FILES = ["./", "./index.html", "./style.css", "./app.js", "./food-data.js", "./firebase-config.js", "./cloud-sync.js", "./manifest.webmanifest", "./icon.svg"];
+const APP_FILES = ["./", "./index.html", "./style.css", "./app.js", "./food-data.js", "./firebase-config.js", "./cloud-sync.js", "./food-data.js", "./firebase-config.js", "./cloud-sync.js", "./manifest.webmanifest", "./icon.svg"];
 
 self.addEventListener("install", event => {
   event.waitUntil(
