@@ -43,6 +43,7 @@
   let editingRoutineId = null;
   let calendarOffset = 0;
   let restRemaining = 90;
+  let restPreset = 90;
   let restEndAt = 0;
   let restInterval = null;
 
@@ -334,7 +335,7 @@
   }
   function startRestTimer() {
     if(restInterval!==null){restRemaining=Math.max(0,Math.ceil((restEndAt-Date.now())/1000));stopRestTimer();return;}
-    if(restRemaining<=0)restRemaining=90;
+    if(restRemaining<=0)restRemaining=restPreset;
     restEndAt=Date.now()+restRemaining*1000;
     restInterval=setInterval(()=>{
       restRemaining=Math.max(0,Math.ceil((restEndAt-Date.now())/1000));updateRestTimer();
@@ -682,9 +683,9 @@
     if(action==="add-water"){const key=dateKey();state.waterByDate[key]=num(state.waterByDate[key])+num(button.dataset.ml);saveState();render();toast(button.dataset.ml+" ml water added.");}
     if(action==="calendar-prev"){calendarOffset--;render();}
     if(action==="calendar-next"){calendarOffset++;render();}
-    if(action==="rest-preset"){restRemaining=num(button.dataset.seconds);stopRestTimer();updateRestTimer();}
+    if(action==="rest-preset"){restPreset=num(button.dataset.seconds);restRemaining=restPreset;stopRestTimer();updateRestTimer();}
     if(action==="rest-start")startRestTimer();
-    if(action==="rest-reset"){stopRestTimer();restRemaining=90;updateRestTimer();}
+    if(action==="rest-reset"){stopRestTimer();restRemaining=restPreset;updateRestTimer();}
     if(action==="set-theme"){state.theme=button.dataset.theme==="light"?"light":"dark";saveState();render();toast(state.theme==="light"?"Light theme enabled.":"Dark theme enabled.");}
     if(action==="toggle-theme"){state.theme=state.theme==="dark"?"light":"dark";saveState();render();}
     if(action==="export-data")exportData();
