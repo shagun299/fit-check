@@ -331,13 +331,13 @@
   function saveRoutine(form) {
     const editingId = form.dataset.editing || "";
     const values = Object.fromEntries(new FormData(form).entries());
-    const selected = $(".routine-exercise-card", form).filter(card => $(".routine-check", card).checked).map(card => ({
+    const selected = $$(".routine-exercise-card", form).filter(card => $(".routine-check", card).checked).map(card => ({
       name: card.dataset.exercise,
       sets: number($("[data-routine-sets]", card).value),
       reps: $("[data-routine-reps]", card).value.trim(),
       load: number($("[data-routine-load]", card).value)
     }));
-    const custom = $(".routine-custom-row", form).map(row => ({
+    const custom = $$(".routine-custom-row", form).map(row => ({
       name: $("[data-custom-name]", row).value.trim(),
       sets: number($("[data-custom-sets]", row).value),
       reps: $("[data-custom-reps]", row).value.trim(),
