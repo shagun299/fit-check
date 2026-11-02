@@ -10,7 +10,7 @@
   <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Crect width='100' height='100' rx='24' fill='%23c6f36b'/%3E%3Cpath d='M25 24h50v13H40v10h29v13H40v16H25z' fill='%23111410'/%3E%3C/svg%3E">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Sora:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&family=Sora:wght@500;600;700;800&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="style.css">
 </head>
 <body>
@@ -31,7 +31,7 @@
       <div class="sidebar-bottom">
         <div class="privacy-card">
           <span class="privacy-icon">⌑</span>
-          <div><strong>Your data stays yours</strong><p>Saved privately in this browser.</p></div>
+          <div><strong>Your data stays yours</strong><p>Private Google sync, when connected.</p></div>
         </div>
         <button class="nav-link settings-link" data-page="settings"><span class="nav-icon">⚙</span><span>Settings</span></button>
         <div class="profile-mini">
@@ -48,7 +48,7 @@
         <div class="breadcrumb"><span>FITCHECK</span><i>/</i><strong id="crumb-current">Overview</strong></div>
         <div class="topbar-right">
           <span class="today-pill"><span class="live-dot"></span><span id="today-label">Today</span></span>
-          <button class="icon-button theme-toggle" id="theme-toggle" aria-label="Switch theme" title="Switch theme">☼</button>
+          <button class="cloud-top-btn" id="cloud-top-btn" data-cloud-action="login" type="button">Connect Google</button><button class="icon-button theme-toggle" id="theme-toggle" aria-label="Switch theme" title="Switch theme">☼</button>
           <button class="top-avatar" data-page="settings" id="top-avatar" aria-label="Open settings">F</button>
         </div>
       </header>
@@ -65,6 +65,9 @@
     </section>
   </div>
   <div class="toast-region" id="toast-region" aria-live="polite"></div>
+  <script src="food-data.js"></script>
+  <script src="firebase-config.js"></script>
   <script src="app.js"></script>
+  <script type="module" src="cloud-sync.js"></script>
 </body>
 </html>
