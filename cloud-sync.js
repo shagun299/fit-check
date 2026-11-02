@@ -303,6 +303,7 @@ window.FitCheckCloud = {
   queueSync,
   signIn,
   getUser: () => currentUser ? { uid: currentUser.uid, email: currentUser.email, displayName: currentUser.displayName } : null,
-  isConfigured: () => isConfigured
+  isConfigured: () => isConfigured,
+  refreshStatus: () => paintStatus(uiStatus.title, uiStatus.description, uiStatus.mode)
 };
 bootCloud();
