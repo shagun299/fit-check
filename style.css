@@ -736,3 +736,79 @@ body.theme-light .cloud-top-btn{background:#eef6e5;color:#45651f;border-color:#c
   .mobile-nav button span{font-size:19px}
   .cloud-top-btn{padding:7px 8px;font-size:9px}
 }
+
+
+/* FitCheck identity, accessible mobile workspace drawer and readable typography */
+.sidebar-head{display:flex;align-items:center;justify-content:space-between;gap:10px;margin:0 0 39px 8px}
+.brand{display:flex;align-items:center;gap:11px;margin:0;min-width:0}
+.brand-symbol{display:block;width:42px;height:42px;flex:none;filter:drop-shadow(0 5px 12px rgba(157,218,77,.13))}
+.brand-copy{display:grid;gap:3px;min-width:0}
+.brand-copy strong{display:block;color:var(--text);font:800 22px/1 var(--font-display);letter-spacing:-1px}
+.brand-copy small{color:var(--muted);font:800 9px/1.3 var(--font-ui);letter-spacing:1.25px;white-space:nowrap}
+.brand-light{color:var(--lime);font-weight:800}
+.sidebar-close{display:none}
+.sidebar-scrim[hidden]{display:none!important}
+.sidebar-scrim{display:none}
+.mobile-menu{border:1px solid var(--line);background:var(--panel);color:var(--text);border-radius:11px;width:40px;height:40px;font-size:21px;font-weight:800;line-height:1}
+body{font-family:var(--font-ui);font-size:15.5px;line-height:1.58}
+button,input,select,textarea{font-family:var(--font-ui)}
+p,.panel-sub,.page-heading p,.coach-note-copy p,.nutrition-visual-banner p{line-height:1.65}
+.eyebrow,.side-label{font-size:11px;letter-spacing:1.2px}
+.footer,.nutrition-source-note,.form-hint,.small-note{font-size:11.5px;line-height:1.65}
+.stat-top,.stat-foot,.list-copy span,.list-meta small,.panel-sub,.cloud-sync-heading p{font-size:12px}
+.form-field label,.filter-tab,.tag,.cloud-status-row{font-size:12px}
+.food-card-main strong{font-size:13px}
+.food-card-main span,.food-card-main small,.food-card-macros small,.micro-line{font-size:11.5px;line-height:1.55}
+.food-card-macros b{font-size:13px}
+.micro-preview strong{font-size:12px}
+.micro-preview span{font-size:12px;line-height:1.6}
+.btn{font-size:13px}
+.list-copy strong{font-size:13px}
+body.theme-light .brand-copy strong{color:#1b241b}
+body.theme-light .brand-copy small{color:#53624e}
+body.theme-light .eyebrow,body.theme-light .side-label{color:#526b40}
+body.theme-light .food-card-main span,body.theme-light .food-card-main small,
+body.theme-light .food-card-macros small,body.theme-light .micro-line,
+body.theme-light .nutrition-source-note,body.theme-light .form-hint{color:#53624e}
+body.theme-light .cloud-sync-heading p,body.theme-light .panel-sub{color:#53624e}
+.nutrition-visual-banner img{width:100%;height:170px;object-fit:cover;object-position:center 52%;display:block;background:var(--panel-3)}
+.nutrition-visual-banner{grid-template-columns:minmax(190px,220px) minmax(0,1fr)}
+.nutrition-visual-banner>div{min-width:0}
+@media(min-width:721px) and (max-width:1050px){
+  .sidebar-head{margin:0 0 38px;justify-content:center}
+  .brand{gap:0}
+  .brand-symbol{width:40px;height:40px}
+  .brand-copy,.sidebar-close{display:none}
+}
+@media(max-width:720px){
+  .sidebar{z-index:42;width:min(88vw,320px);padding:22px 18px 18px;border-radius:0 22px 22px 0;box-shadow:18px 0 60px rgba(0,0,0,.34)}
+  .sidebar-head{margin:0 0 32px 2px}
+  .brand{gap:10px}
+  .brand-symbol{width:40px;height:40px}
+  .brand-copy strong{font-size:22px}
+  .brand-copy small{font-size:9px}
+  .sidebar-close{display:grid;flex:none;width:40px;height:40px;border:1px solid var(--line);background:var(--panel-2);color:var(--text);font-size:25px}
+  .sidebar-scrim:not([hidden]){display:block;position:fixed;inset:0;width:100%;height:100%;padding:0;border:0;border-radius:0;background:rgba(3,7,4,.62);backdrop-filter:blur(3px);z-index:41}
+  body.sidebar-open{overflow:hidden}
+  .mobile-menu{display:grid;place-items:center}
+  .nutrition-visual-banner{grid-template-columns:1fr;gap:0}
+  .nutrition-visual-banner img{width:100%;height:clamp(190px,56vw,245px);object-fit:cover;object-position:center 52%}
+  .nutrition-visual-banner>div{padding:17px 18px 19px}
+  .nutrition-visual-banner h2{font-size:19px}
+  .nutrition-visual-banner p{font-size:13px}
+  .food-card-main strong{font-size:13px}
+  .food-card-main span,.food-card-main small,.food-card-macros small{font-size:11.5px}
+  .food-card-macros b{font-size:12.5px}
+  .coach-note-copy p{font-size:13px}
+  .coach-note-bottom{font-size:11px}
+  .cloud-top-btn{font-size:11px}
+  .mobile-nav button{font-size:12px;min-height:60px}
+}
+@media(max-width:380px){
+  .nutrition-visual-banner img{height:190px}
+  .food-card{grid-template-columns:34px minmax(0,1fr) auto}
+  .food-card-macros small{font-size:11px}
+  .food-card-main small{font-size:11px}
+  .cloud-top-btn{font-size:10px}
+  .mobile-nav button{font-size:11px}
+}
