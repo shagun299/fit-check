@@ -193,7 +193,7 @@
   }
 
   function renderVisualHero() {
-    return "<section class='visual-hero'><div class='visual-hero-copy'><span class='eyebrow'>FITCHECK · YOUR DAILY RESET</span><h2>Build strength.<br>Keep your balance.</h2><p>Train with intention, eat with awareness and notice the progress you make every week.</p><span class='hero-stamp'>YOUR FITNESS, IN FOCUS <b>✦</b></span></div><div class='visual-hero-image'><img src='https://upload.wikimedia.org/wikipedia/commons/4/4d/Indian_Thali_2024.jpg' alt='Balanced Indian meal with dal, rice, eggs and paneer' loading='eager'></div></section>";
+    return "<section class='visual-hero'><div class='visual-hero-copy'><span class='eyebrow'>FITCHECK · YOUR DAILY RESET</span><h2>Build strength.<br>Keep your balance.</h2><p>Train with intention, eat with awareness and notice the progress you make every week.</p><span class='hero-stamp'>YOUR FITNESS, IN FOCUS <b>✦</b></span></div><div class='visual-hero-image'><img src='https://images.pexels.com/photos/31849596/pexels-photo-31849596.jpeg?cs=srgb&dl=pexels-foadshariyati-31849596.jpg&fm=jpg' alt='Athlete training with dumbbells inside a dark gym' loading='eager'></div></section>";
   }
 
   function renderCoachNotes() {
