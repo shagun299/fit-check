@@ -162,13 +162,13 @@
   function mealIcon(category) { return ({Breakfast:"☀",Lunch:"◒",Dinner:"☾",Snack:"✳"})[category]||"◉"; }
   function renderMealItems(items,showDelete=false) {
     if(!items.length) return emptyState("◉","No meals logged yet","Add your first meal to start your daily nutrition log.","Add a meal","add-meal");
-    return "<div class='meal-list'>"+items.slice().sort((a,b)=>(a.time||"").localeCompare(b.time||"")).map(item=>
-      "<div class='list-item'><div class='list-icon'>"+mealIcon(item.category)+"</div><div class='list-copy'><strong>"+safe(item.name)+"</strong><span>"+safe(item.category||"Meal")+" · "+prettyDate(item.date)+(item.time?" · "+safe(item.time):"")+"</span></div><div class='list-meta'>"+Math.round(num(item.calories))+" kcal<small>P "+round(item.protein)+"g · C "+round(item.carbs)+"g · F "+round(item.fat)+"g</small></div>"+
-      (showDelete?"<button class='icon-button' data-action='delete-meal' data-id='"+safe(item.id)+"' aria-label='Delete meal'>×</button>":"")+"</div>"
-    ).join("")+"</div>";
+    return "<div class='meal-list'>"+items.slice().sort((a,b)=>(a.time||"").localeCompare(b.time||"")).map(item=>{
+      const micro=[item.fiber?"Fibre "+round(item.fiber)+" g":"",item.calcium?"Ca "+round(item.calcium)+" mg":"",item.iron?"Iron "+round(item.iron)+" mg":"",item.potassium?"K "+round(item.potassium)+" mg":"",item.vitaminC?"Vit C "+round(item.vitaminC)+" mg":"",item.vitaminB12?"B12 "+round(item.vitaminB12)+" µg":""].filter(Boolean).join(" · ");
+      return "<div class='list-item'><div class='list-icon'>"+mealIcon(item.category)+"</div><div class='list-copy'><strong>"+safe(item.name)+"</strong><span>"+safe(item.category||"Meal")+" · "+prettyDate(item.date)+(item.time?" · "+safe(item.time):"")+"</span>"+(micro?"<small class='micro-line'>"+safe(micro)+"</small>":"")+"</div><div class='list-meta'>"+Math.round(num(item.calories))+" kcal<small>P "+round(item.protein)+"g · C "+round(item.carbs)+"g · F "+round(item.fat)+"g</small></div>"+
+      (showDelete?"<button class='icon-button' data-action='delete-meal' data-id='"+safe(item.id)+"' aria-label='Delete meal'>×</button>":"")+"</div>";
+    }).join("")+"</div>";
   }
-
-  function lastSevenDays() {
+    function lastSevenDays() {
     const days=[];
     for(let i=6;i>=0;i--){const d=new Date();d.setDate(d.getDate()-i);days.push({date:d,key:dateKey(d),label:d.toLocaleDateString("en-IN",{weekday:"short"}).slice(0,2)});}
     return days;
@@ -396,9 +396,10 @@
 
   function foodItem(id) { return FOOD_LIBRARY.concat(state.customFoods).find(f=>f.id===id); }
   function foodCard(food) {
-    return "<article class='food-card' data-food-card data-search='"+safe(food.name.toLowerCase())+"'><div><strong>"+safe(food.name)+"</strong><span>"+safe(food.serving||"1 serving")+"</span></div><div class='food-card-macros'><b>"+food.calories+" kcal</b><small>P "+food.protein+"g · C "+food.carbs+"g · F "+food.fat+"g</small></div><button class='btn btn-secondary btn-small' data-action='add-food' data-id='"+safe(food.id)+"'>＋ Add</button></article>";
+    const detail = "Fibre " + round(food.fiber) + "g · Ca " + round(food.calcium) + "mg · Iron " + round(food.iron) + "mg · K " + round(food.potassium) + "mg";
+    return "<article class='food-card' data-food-card data-search='"+safe((food.name+" "+(food.group||"")).toLowerCase())+"'><div class='food-emoji'>"+safe(food.emoji||"🍽️")+"</div><div class='food-card-main'><strong>"+safe(food.name)+"</strong><span>"+safe(food.serving||"1 serving")+" · "+safe(food.group||"Food")+"</span><small>"+safe(detail)+"</small></div><div class='food-card-macros'><b>"+food.calories+" kcal</b><small>P "+food.protein+"g · C "+food.carbs+"g · F "+food.fat+"g</small><small>Vit C "+round(food.vitaminC)+"mg · B12 "+round(food.vitaminB12)+"µg</small></div><button class='btn btn-secondary btn-small' data-action='add-food' data-id='"+safe(food.id)+"'>＋ Add</button></article>";
   }
-  function savedMealCard(preset) {
+    function savedMealCard(preset) {
     return "<article class='saved-meal-card'><div><strong>"+safe(preset.name)+"</strong><span>"+Math.round(preset.calories)+" kcal · "+round(preset.protein)+"g protein</span></div><button class='btn btn-primary btn-small' data-action='use-saved-meal' data-id='"+safe(preset.id)+"'>Add today</button><button class='icon-button' data-action='delete-saved-meal' data-id='"+safe(preset.id)+"' aria-label='Remove saved meal'>×</button></article>";
   }
   function renderPlanner() {
@@ -542,21 +543,25 @@
   function mealForm(food=null) {
     const now=new Date(),time=String(now.getHours()).padStart(2,"0")+":"+String(now.getMinutes()).padStart(2,"0");
     const name=food?food.name:"",cal=food?food.calories:"",protein=food?food.protein:0,carbs=food?food.carbs:0,fat=food?food.fat:0;
+    const microKeys=["fiber","sugar","calcium","iron","potassium","vitaminA","vitaminC","vitaminD","vitaminB12"];
+    const microInputs=microKeys.map(key=>"<input type='hidden' name='"+key+"' value='"+(food?num(food[key]):0)+"'>").join("");
+    const microPreview=food?"<div class='form-field full micro-preview'><strong>Micronutrients included automatically</strong><span>Fibre "+round(food.fiber)+" g · Calcium "+round(food.calcium)+" mg · Iron "+round(food.iron)+" mg · Potassium "+round(food.potassium)+" mg</span><span>Vitamin A "+round(food.vitaminA)+" µg · C "+round(food.vitaminC)+" mg · D "+round(food.vitaminD)+" µg · B12 "+round(food.vitaminB12)+" µg</span></div>":"";
     return "<form id='meal-form' data-food-id='"+safe(food?food.id:"")+"'><div class='form-grid'><div class='form-field full'><label for='meal-name'>Food or meal name</label><input id='meal-name' name='name' required maxlength='70' value='"+safe(name)+"' placeholder='e.g. Paneer rice bowl'></div>"+
       "<div class='form-field'><label for='meal-category'>Meal type</label><select id='meal-category' name='category'><option>Breakfast</option><option>Lunch</option><option>Snack</option><option>Dinner</option></select></div><div class='form-field'><label for='meal-date'>Date</label><input id='meal-date' name='date' type='date' value='"+dateKey()+"' required></div>"+
       "<div class='form-field'><label for='meal-time'>Time</label><input id='meal-time' type='time' name='time' value='"+time+"'></div><div class='form-field'><label for='meal-quantity'>Servings / quantity</label><input id='meal-quantity' name='quantity' type='number' min='0.1' max='30' step='0.1' value='1'></div>"+
       "<div class='form-field'><label for='meal-calories'>Calories (kcal)</label><input id='meal-calories' name='calories' type='number' min='0' step='1' value='"+safe(cal)+"' placeholder='Optional'></div><div class='form-field'><label for='meal-protein'>Protein (g)</label><input name='protein' type='number' min='0' step='0.1' value='"+safe(protein)+"'></div>"+
-      "<div class='form-field'><label for='meal-carbs'>Carbs (g)</label><input name='carbs' type='number' min='0' step='0.1' value='"+safe(carbs)+"'></div><div class='form-field'><label for='meal-fat'>Fat (g)</label><input name='fat' type='number' min='0' step='0.1' value='"+safe(fat)+"'></div>"+
-      "<div class='form-field full checkbox-field'><label><input type='checkbox' name='savePreset' value='yes'> Save this meal as a quick preset</label></div><div class='form-field full'><span class='form-hint'>Values are per serving. Quantity multiplies the macros. Estimates vary by recipe and portion size.</span></div></div>"+
+      "<div class='form-field'><label for='meal-carbs'>Carbs (g)</label><input name='carbs' type='number' min='0' step='0.1' value='"+safe(carbs)+"'></div><div class='form-field'><label for='meal-fat'>Fat (g)</label><input name='fat' type='number' min='0' step='0.1' value='"+safe(fat)+"'></div>"+microInputs+microPreview+
+      "<div class='form-field full checkbox-field'><label><input type='checkbox' name='savePreset' value='yes'> Save this meal as a quick preset</label></div><div class='form-field full'><span class='form-hint'>Values are per serving. Quantity multiplies macros and micronutrients. Estimates vary by recipe and portion size.</span></div></div>"+
       "<div class='modal-actions'><button type='button' class='btn btn-ghost' data-action='close-modal'>Cancel</button><button class='btn btn-primary' type='submit'>Save food entry</button></div></form>";
   }
   function addMeal(form) {
     const v=formValues(form),q=Math.max(0.1,num(v.quantity)||1),p=num(v.protein)*q,c=num(v.carbs)*q,f=num(v.fat)*q;
     const calories=v.calories===""?(p*4+c*4+f*9):num(v.calories)*q;
-    const item={id:makeId(),date:v.date||dateKey(),time:v.time,name:v.name.trim(),category:v.category,calories:round(calories),protein:round(p),carbs:round(c),fat:round(f)};
+    const micronutrients=["fiber","sugar","calcium","iron","potassium","vitaminA","vitaminC","vitaminD","vitaminB12"].reduce((out,key)=>{out[key]=round(num(v[key])*q);return out;},{});
+    const item={id:makeId(),date:v.date||dateKey(),time:v.time,name:v.name.trim(),category:v.category,calories:round(calories),protein:round(p),carbs:round(c),fat:round(f),...micronutrients};
     state.meals.push(item);
     if(v.savePreset==="yes"&&!state.savedMeals.some(x=>x.name.toLowerCase()===item.name.toLowerCase())){
-      state.savedMeals.push({id:makeId(),name:item.name,category:item.category,calories:item.calories,protein:item.protein,carbs:item.carbs,fat:item.fat});
+      state.savedMeals.push({id:makeId(),name:item.name,category:item.category,calories:item.calories,protein:item.protein,carbs:item.carbs,fat:item.fat,...micronutrients});
     }
     saveState();closeModal();render();toast("Food entry saved.");
   }
@@ -665,7 +670,7 @@
   function openFood(id) {const food=foodItem(id);if(food)openModal("Add "+food.name,mealForm(food),"FOOD LIBRARY");}
   function useSavedMeal(id) {
     const p=state.savedMeals.find(x=>x.id===id);if(!p)return;
-    state.meals.push({id:makeId(),date:dateKey(),time:"",name:p.name,category:p.category||"Snack",calories:p.calories,protein:p.protein,carbs:p.carbs,fat:p.fat});
+    state.meals.push({id:makeId(),date:dateKey(),time:"",name:p.name,category:p.category||"Snack",calories:p.calories,protein:p.protein,carbs:p.carbs,fat:p.fat,fiber:num(p.fiber),sugar:num(p.sugar),calcium:num(p.calcium),iron:num(p.iron),potassium:num(p.potassium),vitaminA:num(p.vitaminA),vitaminC:num(p.vitaminC),vitaminD:num(p.vitaminD),vitaminB12:num(p.vitaminB12)});
     saveState();render();toast(p.name+" added to today's diary.");
   }
   function saveCustomFood(form) {const v=formValues(form);state.customFoods.push({id:makeId(),name:v.name.trim(),serving:v.serving||"1 serving",calories:num(v.calories),protein:num(v.protein),carbs:num(v.carbs),fat:num(v.fat)});saveState();closeModal();render();toast("Custom food saved.");}
