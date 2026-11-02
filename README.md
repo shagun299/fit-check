@@ -8,6 +8,7 @@ A personal gym, nutrition and progress tracker built with plain HTML, CSS and Ja
 - Food diary with meal type, time and macro values.
 - Workout log with muscle focus, session duration, exercises, sets, reps and load.
 - Weigh-in history and a simple weight-trend chart.
+- Daily, weekday and one-time reminders for water, meals, workouts and supplements, with browser notifications while FitCheck is open.
 - Editable profile and daily targets.
 - JSON export/import so you can back up or move your records.
 - Responsive layout and basic offline app-shell caching.
@@ -30,6 +31,8 @@ The site code is public because the repository is public. Your personal entries 
 
 ## Important data note
 
+- Reminder checks run while FitCheck is open in a browser tab or installed app. Notifications require browser permission.
+- This static local-first version cannot send scheduled alerts while the browser is completely closed.
 - Data does not automatically sync between devices or browsers.
 - Export a JSON backup from **Settings → Your data** before clearing browser storage or switching devices.
 - Import that backup on another browser to restore it.
