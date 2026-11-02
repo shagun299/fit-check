@@ -241,7 +241,7 @@ a{color:inherit;text-decoration:none}
   --text:#f4f6ef;--muted:#9ca795;--soft:#d5ddce;--lime:#d3f879;--lime-dark:#b6e65d;
   --orange:#f4b879;--blue:#8ec8ed;--pink:#f29eae;--radius:19px;--shadow:0 22px 70px rgba(0,0,0,.28);
 }
-body{font-family:"Inter",sans-serif;background:radial-gradient(ellipse at 78% -10%,rgba(145,187,82,.09),transparent 36%),var(--bg);letter-spacing:-.01em}
+body{overflow-x:hidden;font-family:"Inter",sans-serif;background:radial-gradient(ellipse at 78% -10%,rgba(145,187,82,.09),transparent 36%),var(--bg);letter-spacing:-.01em}
 h1,h2,h3,h4,.brand,.stat-value,.ring-center strong,.progress-tile strong{font-family:"Sora",sans-serif}
 .sidebar{background:linear-gradient(180deg,#141b15 0%,#101510 100%);border-right-color:#293429}
 .brand{font-size:24px;letter-spacing:-1.4px}
@@ -564,7 +564,7 @@ body.theme-light .progress-fill.water{background:#3985b0}
   .calendar-cell{height:34px}
   .footer{padding:13px 15px 82px;gap:7px;flex-direction:column}
   .mobile-nav{position:fixed;display:grid;grid-template-columns:repeat(5,minmax(0,1fr));left:0;right:0;bottom:0;z-index:30;padding:8px 6px calc(8px + env(safe-area-inset-bottom));background:rgba(16,23,17,.96);border-top:1px solid var(--line);backdrop-filter:blur(18px)}
-  .mobile-nav button{border:0;background:transparent;color:var(--muted);font:600 8px "Inter",sans-serif;display:grid;justify-items:center;gap:3px;padding:4px 1px}
+  .mobile-nav button{border:0;background:transparent;color:var(--muted);font:600 8px "Inter",sans-serif;display:grid;justify-items:center;align-content:center;gap:3px;padding:4px 1px;min-height:44px}
   .mobile-nav button span{font-size:18px;line-height:1.1}
   .mobile-nav button.active{color:var(--lime)}
   body.theme-light .mobile-nav{background:rgba(249,251,246,.96);border-color:#dce4d6}
