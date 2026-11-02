@@ -1,4 +1,4 @@
-const CACHE_NAME = "fitcheck-shell-v9";
+const CACHE_NAME = "fitcheck-shell-v10";
 const APP_FILES = ["./", "./index.html", "./style.css", "./app.js", "./food-data.js", "./firebase-config.js", "./cloud-sync.js", "./manifest.webmanifest", "./icon.svg", "./logo.svg"];
 
 self.addEventListener("install", event => {
