@@ -188,7 +188,7 @@
   function renderWorkoutItems(items,showActions=false) {
     if(!items.length) return emptyState("↗","No workouts logged","Start from a saved routine or log a workout from scratch.","Log your first workout","add-workout");
     return "<div class='workout-list'>"+items.slice().sort((a,b)=>(b.createdAt||b.date||"").localeCompare(a.createdAt||a.date||"")).map(item=>{
-      const exercises=item.exercises||[],sets=exercises.reduce((s,e)=>s+(e.setDetails||[]).length||s+num(e.sets),0);
+      const exercises=item.exercises||[],sets=exercises.reduce((s,e)=>s+normaliseSets(e).length,0);
       const breakdown=exercises.map(e=>{
         const details=normaliseSets(e);
         return "<div class='workout-exercise-detail'><strong>"+safe(e.name)+"</strong><div>"+details.map((x,i)=>"<span>Set "+(i+1)+": "+safe(x.reps)+" reps × "+round(x.weight)+" kg</span>").join("")+"</div></div>";
