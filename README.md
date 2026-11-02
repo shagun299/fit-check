@@ -7,8 +7,11 @@ A personal gym, nutrition and progress tracker built with plain HTML, CSS and Ja
 - Daily dashboard for calories, protein, carbs, fat and water.
 - Food diary with meal type, time and macro values.
 - Workout log with muscle focus, session duration, exercises, sets, reps and load.
+- Routine studio with exercise libraries for chest, back, shoulders, biceps, triceps, legs and core; save, edit, reuse and delete your own training-day templates.
+- Custom exercises, routine notes, and detailed editable workout history.
 - Weigh-in history and a simple weight-trend chart.
 - Daily, weekday and one-time reminders for water, meals, workouts and supplements, with browser notifications while FitCheck is open.
+- Premium typography refresh using Sora headings and Inter interface text.
 - Editable profile and daily targets.
 - JSON export/import so you can back up or move your records.
 - Responsive layout and basic offline app-shell caching.
