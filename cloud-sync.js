@@ -44,7 +44,11 @@ function mergeLists(localList, cloudList) {
 function mergeStates(local, cloud) {
   const a = local || {}, b = cloud || {};
   const result = { ...bridge.getEmptyState(), ...a, ...b,
-    profile: { ...(a.profile || {}), ...(b.profile || {}) },
+    profile: (() => {
+      const localProfile = a.profile || {}, cloudProfile = b.profile || {};
+      const cloudHasIdentity = Boolean(cloudProfile.name || cloudProfile.height || cloudProfile.currentWeight);
+      return { ...localProfile, ...(cloudHasIdentity ? cloudProfile : {}) };
+    })(),
     targets: { ...(a.targets || {}), ...(b.targets || {}) },
     waterByDate: { ...(a.waterByDate || {}), ...(b.waterByDate || {}) }
   };
