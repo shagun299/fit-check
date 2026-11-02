@@ -16,6 +16,7 @@ let dirty = false;
 let applyingRemote = false;
 let lastFingerprint = "";
 let pendingPhotoUploads = 0;
+let uiStatus = { title: "Checking cloud setup…", description: "Preparing your private FitCheck account.", mode: "local" };
 
 function cloneData(value) { return JSON.parse(JSON.stringify(value)); }
 function fingerprint(value) {
@@ -65,6 +66,7 @@ function hydrateCloudState(value) {
   return state;
 }
 function paintStatus(title, description, mode = "local") {
+  uiStatus = { title, description, mode };
   const titleNode = document.getElementById("cloud-status-title");
   const descriptionNode = document.getElementById("cloud-status-copy");
   const dot = document.getElementById("cloud-status-dot");
