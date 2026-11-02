@@ -15,6 +15,7 @@
 
   let state = loadState();
   let currentPage = "dashboard";
+  let editingRoutineId = null;
 
   function loadState() {
     try {
@@ -125,7 +126,7 @@
   }
 
   function renderWorkoutItems(items, showDelete = false) {
-    if (!items.length) return emptyState("↗", "No workouts logged", "Start from a saved routine or log a workout from scratch.", "Build your first routine", "scroll-routine-builder");
+    if (!items.length) return emptyState("↗", "No workouts logged", "Start from a saved routine or log a workout from scratch.", "Log your first workout", "add-workout");
     return "<div class='workout-list'>" + items.slice().sort((a, b) => (b.createdAt || b.date || "").localeCompare(a.createdAt || a.date || "")).map(item => {
       const exercises = item.exercises || [];
       const exerciseCount = exercises.length;
@@ -254,16 +255,18 @@
     Core: ["Plank", "Cable crunch", "Hanging knee raise", "Reverse crunch", "Dead bug"]
   };
 
-  function routineExerciseCard(name, savedExercise) {
-    const checked = savedExercise ? "checked" : "checked";
+  function routineExerciseCard(name, savedExercise, defaultSelected = false) {
+    const isSelected = Boolean(savedExercise) || defaultSelected;
+    const checked = isSelected ? "checked" : "";
+    const disabled = isSelected ? "" : "disabled";
     const sets = savedExercise ? savedExercise.sets : 3;
     const reps = savedExercise ? savedExercise.reps : "20 / 15 / 12";
     const load = savedExercise ? savedExercise.load : 0;
     return "<div class='routine-exercise-card' data-exercise='" + safe(name) + "'>" +
       "<label class='routine-exercise-top'><input class='routine-check' type='checkbox' " + checked + "><span>" + safe(name) + "</span><i>✓</i></label>" +
-      "<div class='routine-exercise-fields'><label>Sets<input data-routine-sets type='number' min='1' max='20' value='" + safe(sets) + "'></label>" +
-      "<label>Reps<input data-routine-reps maxlength='24' value='" + safe(reps) + "'></label>" +
-      "<label>Load kg<input data-routine-load type='number' min='0' step='0.5' value='" + safe(load) + "'></label></div></div>";
+      "<div class='routine-exercise-fields'><label>Sets<input data-routine-sets type='number' min='1' max='20' value='" + safe(sets) + "' " + disabled + "></label>" +
+      "<label>Reps<input data-routine-reps maxlength='24' value='" + safe(reps) + "' " + disabled + "></label>" +
+      "<label>Load kg<input data-routine-load type='number' min='0' step='0.5' value='" + safe(load) + "' " + disabled + "></label></div></div>";
   }
 
   function customRoutineExerciseRow(exercise = {}) {
@@ -277,7 +280,7 @@
   function routineExerciseOptions(muscle, selectedExercises) {
     const library = EXERCISE_LIBRARY[muscle] || [];
     const selectedByName = new Map((selectedExercises || []).map(item => [item.name, item]));
-    return library.map(name => routineExerciseCard(name, selectedByName.get(name) || null)).join("");
+    return library.map(name => routineExerciseCard(name, selectedByName.get(name) || null, true)).join("");
   }
 
   function renderRoutineBuilder(routine = null) {
@@ -286,7 +289,7 @@
     const customExercises = routine ? (routine.exercises || []).filter(item => !libraryNames.includes(item.name)) : [];
     const exerciseOptions = routine
       ? (routine.exercises || []).filter(item => libraryNames.includes(item.name)).map(item => routineExerciseCard(item.name, item)).join("") +
-        libraryNames.filter(name => !(routine.exercises || []).some(item => item.name === name)).map(name => routineExerciseCard(name, null)).join("")
+        libraryNames.filter(name => !(routine.exercises || []).some(item => item.name === name)).map(name => routineExerciseCard(name, null, false)).join("")
       : routineExerciseOptions(muscle, []);
     const routineName = routine ? routine.name : muscle + " day";
     return "<form id='routine-form' data-editing='" + safe(routine ? routine.id : "") + "'>" +
