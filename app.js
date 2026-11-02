@@ -6,7 +6,7 @@
     profile: { name: "", height: "", currentWeight: "", goal: "Body recomposition", unit: "kg" },
     targets: { calories: 2000, protein: 120, carbs: 220, fat: 65, water: 2500 },
     meals: [], workouts: [], weighIns: [], waterByDate: {}, reminders: [],
-    routines: [], savedMeals: [], customFoods: [], plannedMeals: [], measurements: [], theme: "dark"
+    routines: [], savedMeals: [], customFoods: [], plannedMeals: [], measurements: [], progressPhotos: [], theme: "dark"
   };
 
   const FOOD_LIBRARY = [
@@ -42,6 +42,9 @@
   let currentPage = "dashboard";
   let editingRoutineId = null;
   let calendarOffset = 0;
+  let restRemaining = 90;
+  let restEndAt = 0;
+  let restInterval = null;
 
   function clone(value) { return JSON.parse(JSON.stringify(value)); }
   function loadState() {
@@ -63,6 +66,7 @@
         customFoods: Array.isArray(parsed.customFoods) ? parsed.customFoods : [],
         plannedMeals: Array.isArray(parsed.plannedMeals) ? parsed.plannedMeals : [],
         measurements: Array.isArray(parsed.measurements) ? parsed.measurements : [],
+        progressPhotos: Array.isArray(parsed.progressPhotos) ? parsed.progressPhotos : [],
         theme: parsed.theme === "light" ? "light" : "dark"
       };
     } catch (error) {
@@ -311,6 +315,38 @@
     if(!records.length)return emptyState("★","No personal records yet","Your heaviest recorded set for each exercise will appear here.");
     return "<div class='pr-list'>"+records.slice(0,6).map(r=>"<div><span>"+safe(r.name)+"</span><strong>"+round(r.weight)+" kg</strong><small>"+r.reps+" reps · "+prettyDate(r.date)+"</small></div>").join("")+"</div>";
   }
+
+  function formatClock(seconds) {
+    const mm=String(Math.floor(seconds/60)).padStart(2,"0"),ss=String(seconds%60).padStart(2,"0");
+    return mm+":"+ss;
+  }
+  function renderRestTimer() {
+    return "<section class='panel rest-timer-panel'><div class='panel-head'><div><h2>Rest timer</h2><div class='panel-sub'>A simple timer between working sets</div></div><span class='tag'>TRAINING TOOL</span></div><div class='rest-timer-layout'><div class='rest-timer-display' id='rest-timer-display'>"+formatClock(restRemaining)+"</div><div class='rest-timer-controls'><div class='rest-presets'><button data-action='rest-preset' data-seconds='60'>60s</button><button data-action='rest-preset' data-seconds='90'>90s</button><button data-action='rest-preset' data-seconds='120'>120s</button></div><div class='rest-main-actions'><button class='btn btn-primary' id='rest-start-button' data-action='rest-start'>Start</button><button class='btn btn-ghost btn-small' data-action='rest-reset'>Reset</button></div></div></div></section>";
+  }
+  function updateRestTimer() {
+    const display=$("#rest-timer-display"),start=$("#rest-start-button");
+    if(display)display.textContent=formatClock(restRemaining);
+    if(start)start.textContent=restInterval?"Pause":"Start";
+  }
+  function stopRestTimer() {
+    if(restInterval!==null){clearInterval(restInterval);restInterval=null;}
+    restEndAt=0;updateRestTimer();
+  }
+  function startRestTimer() {
+    if(restInterval!==null){restRemaining=Math.max(0,Math.ceil((restEndAt-Date.now())/1000));stopRestTimer();return;}
+    if(restRemaining<=0)restRemaining=90;
+    restEndAt=Date.now()+restRemaining*1000;
+    restInterval=setInterval(()=>{
+      restRemaining=Math.max(0,Math.ceil((restEndAt-Date.now())/1000));updateRestTimer();
+      if(restRemaining===0){
+        stopRestTimer();
+        if("Notification" in window&&Notification.permission==="granted")new Notification("FitCheck · Rest complete",{body:"Your next set is ready when you are.",icon:"./icon.svg"});
+        else toast("Rest complete. Ready for your next set?");
+      }
+    },250);
+    updateRestTimer();
+  }
+
   function renderWorkouts() {
     const totalSets=state.workouts.reduce((s,w)=>s+(w.exercises||[]).reduce((a,e)=>a+normaliseSets(e).length,0),0);
     const minutes=state.workouts.reduce((s,w)=>s+num(w.duration),0);
@@ -318,7 +354,7 @@
     return "<div class='page-heading'><div><span class='eyebrow'>SHOW UP. PUT IN THE WORK.</span><h1>Workout studio</h1><p>Plan training days, log each working set and keep your strength moving.</p></div><div class='heading-actions'><button class='btn btn-secondary' data-action='add-workout'>＋ Quick log</button></div></div>"+
       "<div class='grid stats-grid'>"+statCard("Sessions logged",state.workouts.length,"total","Every session you record","↗")+statCard("Working sets",totalSets,"sets","Across all logged sessions","▤")+statCard("Training time",Math.round(minutes/60*10)/10,"hours","Based on logged duration","◷")+statCard("Saved routines",state.routines.length,"plans","Reusable training days","✳")+"</div>"+
       "<section class='panel routine-studio-panel'><div class='panel-head'><div><span class='eyebrow'>PLAN · SAVE · REPEAT</span><h2>Routine studio</h2><div class='panel-sub'>Build a routine once and load it into your workout when you train.</div></div><span class='tag'>PERSONAL PLAN BUILDER</span></div><div class='routine-studio-grid'><div class='routine-builder-column'>"+routineBuilder(editing)+"</div><aside class='routine-saved-column'><div class='saved-routine-heading'><div><h3>Saved routines</h3><p>"+state.routines.length+" training day(s) ready</p></div><span class='saved-count'>"+state.routines.length+"</span></div>"+renderSavedRoutines()+"</aside></div></section>"+
-      "<div class='grid workout-lower-grid'>"+renderWorkoutCalendar()+"<section class='panel'><div class='panel-head'><div><h2>Personal records</h2><div class='panel-sub'>Heaviest logged set by exercise</div></div><span class='tag'>STRENGTH</span></div>"+renderPersonalRecords()+"</section></div>"+
+      "<div class='grid workout-lower-grid'>"+renderWorkoutCalendar()+"<section class='panel'><div class='panel-head'><div><h2>Personal records</h2><div class='panel-sub'>Heaviest logged set by exercise</div></div><span class='tag'>STRENGTH</span></div>"+renderPersonalRecords()+"</section></div><div class='rest-timer-slot'>"+renderRestTimer()+"</div>"+
       "<section class='panel session-history-panel'><div class='panel-head'><div><h2>Session history</h2><div class='panel-sub'>Open a workout to inspect each set or edit it.</div></div><button class='inline-link' data-action='add-workout'>＋ Log workout</button></div>"+renderWorkoutItems(state.workouts,true)+"</section>";
   }
 
@@ -374,16 +410,56 @@
       "<div><strong>"+w.workouts.length+"</strong><span>training sessions</span><small>Logged workouts</small></div><div><strong>"+Math.round(w.avgProtein)+" g</strong><span>average protein</span><small>"+(w.loggedDays?proteinPct+"% of target on logged days":"No meals logged yet")+"</small></div><div><strong>"+Math.round(w.avgCalories)+"</strong><span>average calories</span><small>"+(w.loggedDays?calPct+"% of target on logged days":"No meals logged yet")+"</small></div><div><strong>"+(w.avgWater/1000).toFixed(1)+" L</strong><span>average water</span><small>Daily average across the week</small></div></div>"+
       "<p class='small-note'>Averages use days with a food entry for nutrition, and all seven days for water. Missing logs are not counted as zero food intake.</p></section>";
   }
+
+  function progressPhotoForm() {
+    return "<form id='progress-photo-form'><div class='form-grid'><div class='form-field full'><label>Photo</label><input name='photo' type='file' accept='image/*' required><span class='form-hint'>Choose a clear progress photo. FitCheck compresses it and stores it privately in this browser.</span></div><div class='form-field'><label>Date</label><input name='date' type='date' value='"+dateKey()+"' required></div><div class='form-field'><label>Label</label><input name='label' maxlength='40' placeholder='e.g. Monthly check-in'></div></div><div class='modal-actions'><button type='button' class='btn btn-ghost' data-action='close-modal'>Cancel</button><button class='btn btn-primary' type='submit'>Save photo locally</button></div></form>";
+  }
+  function compressPhoto(dataUrl) {
+    return new Promise((resolve,reject)=>{
+      const image=new Image();
+      image.onload=()=>{
+        const max=1000,scale=Math.min(1,max/Math.max(image.width,image.height));
+        const canvas=document.createElement("canvas");
+        canvas.width=Math.max(1,Math.round(image.width*scale));canvas.height=Math.max(1,Math.round(image.height*scale));
+        const ctx=canvas.getContext("2d");ctx.drawImage(image,0,0,canvas.width,canvas.height);
+        resolve(canvas.toDataURL("image/jpeg",0.68));
+      };
+      image.onerror=()=>reject(new Error("Image could not be read"));image.src=dataUrl;
+    });
+  }
+  function saveProgressPhoto(form) {
+    const values=formValues(form),file=form.querySelector("input[name=photo]").files[0];
+    if(!file){toast("Choose a photo first.");return;}
+    if(!file.type.startsWith("image/")){toast("Choose an image file.");return;}
+    const reader=new FileReader();
+    reader.onload=async()=>{
+      try{
+        const data=await compressPhoto(reader.result),photo={id:makeId(),date:values.date,label:values.label.trim()||"Progress check-in",data};
+        const used=state.progressPhotos.reduce((sum,x)=>sum+(x.data||"").length,0);
+        if(used+data.length>3500000){toast("Photo storage is nearly full. Export a backup and remove older photos.");return;}
+        state.progressPhotos.push(photo);saveState();closeModal();render();toast("Progress photo saved privately.");
+      }catch(error){toast("Could not process that photo. Try another image.");}
+    };
+    reader.onerror=()=>toast("Could not read that photo.");reader.readAsDataURL(file);
+  }
+  function renderProgressPhotos() {
+    if(!state.progressPhotos.length)return emptyState("▧","No progress photos yet","Save a private monthly check-in photo to compare changes over time.","＋ Add progress photo","add-progress-photo");
+    return "<div class='progress-photo-grid'>"+state.progressPhotos.slice().sort((a,b)=>b.date.localeCompare(a.date)).map(photo=>
+      "<article class='progress-photo-card'><img src='"+safe(photo.data)+"' alt='Private progress check-in from "+safe(prettyDate(photo.date))+"' loading='lazy'><div><strong>"+safe(photo.label)+"</strong><span>"+prettyDate(photo.date,{day:"numeric",month:"short",year:"numeric"})+"</span><button class='inline-link' data-action='delete-progress-photo' data-id='"+safe(photo.id)+"'>Remove</button></div></article>"
+    ).join("")+"</div>";
+  }
+
   function renderProgress() {
     const weights=state.weighIns.slice().sort((a,b)=>a.date.localeCompare(b.date)),latest=weights[weights.length-1],previous=weights.length>1?weights[weights.length-2]:null;
     const delta=latest&&previous?round(latest.weight-previous.weight):null;
     const recent=weights.slice().reverse().slice(0,8);
-    return "<div class='page-heading'><div><span class='eyebrow'>NOTICE THE LITTLE WINS</span><h1>Your progress</h1><p>Look at strength, measurements and habits together. One number never tells the whole story.</p></div><div class='heading-actions'><button class='btn btn-secondary' data-action='add-measurements'>＋ Body measurements</button><button class='btn btn-primary' data-action='add-weight'>＋ Weigh-in</button></div></div>"+
+    return "<div class='page-heading'><div><span class='eyebrow'>NOTICE THE LITTLE WINS</span><h1>Your progress</h1><p>Look at strength, measurements and habits together. One number never tells the whole story.</p></div><div class='heading-actions'><button class='btn btn-ghost' data-action='add-progress-photo'>＋ Progress photo</button><button class='btn btn-secondary' data-action='add-measurements'>＋ Body measurements</button><button class='btn btn-primary' data-action='add-weight'>＋ Weigh-in</button></div></div>"+
       "<div class='progress-summary'><div class='progress-tile'><span>Latest weight</span><strong>"+(latest?round(latest.weight)+" "+safe(state.profile.unit):"—")+"</strong><small>"+(latest?prettyDate(latest.date):"No weigh-ins yet")+"</small></div><div class='progress-tile'><span>Change from previous</span><strong>"+(delta===null?"—":(delta>0?"+":"")+delta+" "+safe(state.profile.unit))+"</strong><small>"+(delta===null?"Add another check-in to compare":"Latest vs previous")+"</small></div><div class='progress-tile'><span>Sessions logged</span><strong>"+state.workouts.length+"</strong><small>All-time training history</small></div></div>"+
       "<section class='panel' style='margin-top:16px'><div class='panel-head'><div><h2>Weight trend</h2><div class='panel-sub'>Most recent 12 weigh-ins · "+safe(state.profile.unit)+"</div></div><span class='tag'>PROGRESS</span></div><div class='chart-wrap'>"+weightChart(weights)+"</div></section>"+
       "<div class='grid progress-two-col'><section class='panel'><div class='panel-head'><div><h2>Body measurements</h2><div class='panel-sub'>Track waist, chest, arms and thigh in centimetres.</div></div><button class='inline-link' data-action='add-measurements'>＋ Add</button></div>"+measurementSummary()+"</section>"+renderWeeklyInsights()+"</div>"+
       "<section class='panel'><div class='panel-head'><div><h2>Weigh-in history</h2><div class='panel-sub'>Consistent conditions make comparisons more useful.</div></div></div>"+(recent.length?"<div class='table-scroll'><table class='data-table'><thead><tr><th>DATE</th><th>WEIGHT</th><th>NOTE</th><th></th></tr></thead><tbody>"+recent.map(x=>"<tr><td>"+prettyDate(x.date,{weekday:"short",day:"numeric",month:"short",year:"numeric"})+"</td><td><strong>"+round(x.weight)+" "+safe(state.profile.unit)+"</strong></td><td>"+safe(x.note||"—")+"</td><td><button class='inline-link' data-action='delete-weight' data-id='"+safe(x.id)+"'>Remove</button></td></tr>").join("")+"</tbody></table></div>":emptyState("⌁","Your progress starts here","Add a weigh-in to create your first trend line.","Add weigh-in","add-weight"))+"</section>"+
       (state.measurements.length?"<section class='panel'><div class='panel-head'><div><h2>Measurement history</h2><div class='panel-sub'>Saved body check-ins</div></div></div><div class='table-scroll'><table class='data-table'><thead><tr><th>DATE</th><th>WAIST</th><th>CHEST</th><th>ARMS</th><th>THIGH</th><th></th></tr></thead><tbody>"+state.measurements.slice().sort((a,b)=>b.date.localeCompare(a.date)).slice(0,8).map(x=>"<tr><td>"+prettyDate(x.date)+"</td><td>"+(x.waist||"—")+"</td><td>"+(x.chest||"—")+"</td><td>"+(x.arms||"—")+"</td><td>"+(x.thigh||"—")+"</td><td><button class='inline-link' data-action='delete-measurement' data-id='"+safe(x.id)+"'>Remove</button></td></tr>").join("")+"</tbody></table></div></section>":"")+
+      "<section class='panel'><div class='panel-head'><div><h2>Progress photos</h2><div class='panel-sub'>Private check-ins stored in this browser only.</div></div><button class='inline-link' data-action='add-progress-photo'>＋ Add photo</button></div>"+renderProgressPhotos()+"</section>"+
       "<p class='small-note'>Body weight naturally fluctuates. Look at longer-term patterns rather than reacting to a single measurement.</p>";
   }
 
@@ -543,7 +619,7 @@
           meals:Array.isArray(d.meals)?d.meals:[],workouts:Array.isArray(d.workouts)?d.workouts:[],weighIns:Array.isArray(d.weighIns)?d.weighIns:[],
           waterByDate:d.waterByDate||{},reminders:Array.isArray(d.reminders)?d.reminders:[],routines:Array.isArray(d.routines)?d.routines:[],
           savedMeals:Array.isArray(d.savedMeals)?d.savedMeals:[],customFoods:Array.isArray(d.customFoods)?d.customFoods:[],
-          plannedMeals:Array.isArray(d.plannedMeals)?d.plannedMeals:[],measurements:Array.isArray(d.measurements)?d.measurements:[],theme:d.theme==="light"?"light":"dark"};
+          plannedMeals:Array.isArray(d.plannedMeals)?d.plannedMeals:[],measurements:Array.isArray(d.measurements)?d.measurements:[],progressPhotos:Array.isArray(d.progressPhotos)?d.progressPhotos:[],theme:d.theme==="light"?"light":"dark"};
         saveState();render();toast("Backup imported.");
       }catch(e){toast("That file is not a valid FitCheck backup.");}
     };
@@ -577,6 +653,7 @@
     if(action==="add-workout")openModal("Log a workout",workoutForm());
     if(action==="add-weight")openModal("Add weigh-in",weightForm(),"PROGRESS CHECK-IN");
     if(action==="add-measurements")openModal("Body measurements",measurementsForm(),"PROGRESS CHECK-IN");
+    if(action==="add-progress-photo")openModal("Add progress photo",progressPhotoForm(),"PRIVATE PROGRESS CHECK-IN");
     if(action==="add-reminder")openModal("Create a reminder",reminderForm(),"BUILD YOUR ROUTINE");
     if(action==="enable-notifications")enableNotifications();
     if(action==="plan-meal")openModal("Plan a meal",planMealForm(),"MEAL PLANNER");
@@ -596,6 +673,7 @@
     if(action==="delete-meal"){state.meals=state.meals.filter(x=>x.id!==id);saveState();render();toast("Meal removed.");}
     if(action==="delete-weight"){state.weighIns=state.weighIns.filter(x=>x.id!==id);saveState();render();toast("Weigh-in removed.");}
     if(action==="delete-measurement"){state.measurements=state.measurements.filter(x=>x.id!==id);saveState();render();toast("Measurement removed.");}
+    if(action==="delete-progress-photo"){state.progressPhotos=state.progressPhotos.filter(x=>x.id!==id);saveState();render();toast("Progress photo removed.");}
     if(action==="use-saved-meal")useSavedMeal(id);
     if(action==="delete-saved-meal"){state.savedMeals=state.savedMeals.filter(x=>x.id!==id);saveState();render();toast("Saved meal removed.");}
     if(action==="delete-planned-meal"){state.plannedMeals=state.plannedMeals.filter(x=>x.id!==id);saveState();render();}
@@ -604,6 +682,9 @@
     if(action==="add-water"){const key=dateKey();state.waterByDate[key]=num(state.waterByDate[key])+num(button.dataset.ml);saveState();render();toast(button.dataset.ml+" ml water added.");}
     if(action==="calendar-prev"){calendarOffset--;render();}
     if(action==="calendar-next"){calendarOffset++;render();}
+    if(action==="rest-preset"){restRemaining=num(button.dataset.seconds);stopRestTimer();updateRestTimer();}
+    if(action==="rest-start")startRestTimer();
+    if(action==="rest-reset"){stopRestTimer();restRemaining=90;updateRestTimer();}
     if(action==="set-theme"){state.theme=button.dataset.theme==="light"?"light":"dark";saveState();render();toast(state.theme==="light"?"Light theme enabled.":"Dark theme enabled.");}
     if(action==="toggle-theme"){state.theme=state.theme==="dark"?"light":"dark";saveState();render();}
     if(action==="export-data")exportData();
@@ -625,6 +706,7 @@
     if(id==="routine-form"){event.preventDefault();saveRoutine(event.target);}
     if(id==="weight-form"){event.preventDefault();addWeight(event.target);}
     if(id==="measurements-form"){event.preventDefault();saveMeasurements(event.target);}
+    if(id==="progress-photo-form"){event.preventDefault();saveProgressPhoto(event.target);}
     if(id==="reminder-form"){event.preventDefault();addReminder(event.target);}
     if(id==="custom-food-form"){event.preventDefault();saveCustomFood(event.target);}
     if(id==="plan-meal-form"){event.preventDefault();savePlannedMeal(event.target);}
