@@ -106,12 +106,12 @@ async function prepareForCloud(snapshot) {
   const copy = cloneData(snapshot);
   const photos = [];
   pendingPhotoUploads = 0;
-  const { ref: storageRef, uploadBytes, getDownloadURL } = await import("https://www.gstatic.com/firebasejs/" + FITCHECK_FIREBASE_VERSION + "/firebase-storage.js");
   for (const photo of copy.progressPhotos || []) {
     try {
       let url = photo.url || "";
-      if (!url && photo.data && /^https?:\\/\\//i.test(photo.data)) url = photo.data;
+      if (!url && photo.data && (photo.data.startsWith("http://") || photo.data.startsWith("https://"))) url = photo.data;
       if (!url && photo.data && photo.data.startsWith("data:")) {
+        const { ref: storageRef, uploadBytes, getDownloadURL } = await import("https://www.gstatic.com/firebasejs/" + FITCHECK_FIREBASE_VERSION + "/firebase-storage.js");
         const objectRef = storageRef(storage, "users/" + currentUser.uid + "/progress-photos/" + encodeURIComponent(photo.id) + ".jpg");
         await uploadBytes(objectRef, photoDataToBlob(photo.data), { contentType: "image/jpeg" });
         url = await getDownloadURL(objectRef);
