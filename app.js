@@ -368,6 +368,7 @@
       "<div class='form-field full'><label for='meal-name'>Food or meal name</label><input id='meal-name' name='name' required maxlength='70' placeholder='e.g. Paneer rice bowl'></div>" +
       "<div class='form-field'><label for='meal-category'>Meal type</label><select id='meal-category' name='category'><option>Breakfast</option><option>Lunch</option><option>Snack</option><option>Dinner</option></select></div>" +
       "<div class='form-field'><label for='meal-time'>Time</label><input id='meal-time' type='time' name='time' value='" + time + "'></div>" +
+      "<div class='form-field'><label for='meal-date'>Date</label><input id='meal-date' type='date' name='date' value='" + dateKey() + "'></div>" +
       "<div class='form-field'><label for='meal-calories'>Calories (kcal)</label><input id='meal-calories' name='calories' type='number' min='0' step='1' placeholder='Optional'></div>" +
       "<div class='form-field'><label for='meal-protein'>Protein (g)</label><input name='protein' type='number' min='0' step='0.1' value='0'></div>" +
       "<div class='form-field'><label for='meal-carbs'>Carbs (g)</label><input name='carbs' type='number' min='0' step='0.1' value='0'></div>" +
@@ -409,7 +410,7 @@
     const protein = number(values.protein), carbs = number(values.carbs), fat = number(values.fat);
     const calories = values.calories === "" ? protein * 4 + carbs * 4 + fat * 9 : number(values.calories);
     state.meals.push({
-      id: makeId(), date: dateKey(), time: values.time, name: values.name.trim(), category: values.category,
+      id: makeId(), date: values.date || dateKey(), time: values.time, name: values.name.trim(), category: values.category,
       calories: round(calories), protein: round(protein), carbs: round(carbs), fat: round(fat)
     });
     saveState(); closeModal(); render(); toast("Meal added to your food diary.");
