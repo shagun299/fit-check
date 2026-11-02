@@ -9,9 +9,11 @@ A local-first personal gym, nutrition and body-recomposition tracker built with 
 - Custom foods, saved meal presets, meal diary and a simple future meal planner.
 - Workout routine builder with five exercise options for chest, back, shoulders, biceps, triceps, legs and core.
 - Individual working-set logging with reps and weight per set.
+- Built-in 60, 90 and 120-second rest timer.
+- Private compressed progress photo check-ins stored in this browser.
 - Previous-session comparison, heaviest recorded set by exercise, personal records and workout calendar.
 - Editable workout history and reusable routines.
-- Weigh-ins, body measurements, weight chart and weekly insights.
+- Weigh-ins, body measurements, private progress photo check-ins, weight chart and weekly insights.
 - Daily, weekday and one-time reminders with browser notifications while FitCheck is open.
 - Dark and light themes.
 - Responsive phone, tablet and desktop layouts.
