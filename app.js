@@ -8,7 +8,8 @@
     meals: [],
     workouts: [],
     weighIns: [],
-    waterByDate: {}
+    waterByDate: {},
+    reminders: []
   };
 
   let state = loadState();
@@ -27,7 +28,8 @@
         meals: Array.isArray(parsed.meals) ? parsed.meals : [],
         workouts: Array.isArray(parsed.workouts) ? parsed.workouts : [],
         weighIns: Array.isArray(parsed.weighIns) ? parsed.weighIns : [],
-        waterByDate: parsed.waterByDate || {}
+        waterByDate: parsed.waterByDate || {},
+        reminders: Array.isArray(parsed.reminders) ? parsed.reminders : []
       };
     } catch (error) {
       console.warn("FitCheck could not read saved data.", error);
@@ -296,6 +298,155 @@
       "</section><p class='small-note'>Body weight naturally fluctuates. Look at longer-term patterns rather than reacting to a single measurement.</p>";
   }
 
+
+  function reminderFrequencyLabel(reminder) {
+    if (reminder.frequency === "weekdays") return "Weekdays";
+    if (reminder.frequency === "once") return "Once · " + prettyDate(reminder.date, { day: "numeric", month: "short", year: "numeric" });
+    return "Every day";
+  }
+
+  function reminderIcon(category) {
+    return ({ Water: "♧", Meal: "◉", Workout: "↗", Supplements: "✳", Other: "◷" })[category] || "◷";
+  }
+
+  function renderReminders() {
+    const permission = ("Notification" in window) ? Notification.permission : "unsupported";
+    const permissionCopy = permission === "granted"
+      ? "Browser notifications are enabled on this device."
+      : permission === "denied"
+        ? "Notifications are blocked by your browser. Change this site's permission in browser settings."
+        : permission === "unsupported"
+          ? "This browser does not support notifications."
+          : "Allow notifications so FitCheck can alert you when a reminder is due.";
+    const permissionButton = permission === "default"
+      ? "<button class='btn btn-primary btn-small' data-action='enable-notifications'>Enable notifications</button>"
+      : permission === "granted"
+        ? "<span class='tag'>NOTIFICATIONS ON</span>"
+        : "<span class='tag orange'>NOTIFICATIONS OFF</span>";
+    const sorted = state.reminders.slice().sort((a, b) => a.time.localeCompare(b.time));
+    const activeCount = sorted.filter(item => item.enabled).length;
+    const list = sorted.length ? "<div class='reminder-list'>" + sorted.map(item => {
+      const today = dateKey();
+      const doneToday = item.lastFired === today;
+      return "<article class='reminder-item " + (item.enabled ? "" : "is-disabled") + "'>" +
+        "<div class='list-icon'>" + reminderIcon(item.category) + "</div>" +
+        "<div class='reminder-copy'><strong>" + safe(item.title) + "</strong><span>" + safe(item.category) + " · " + safe(reminderFrequencyLabel(item)) +
+        (doneToday ? " · Done today" : "") + "</span></div>" +
+        "<div class='reminder-time'>" + safe(item.time) + "<small>" + (item.enabled ? (doneToday ? "Completed" : "Active") : "Paused") + "</small></div>" +
+        "<button class='btn btn-ghost btn-small' data-action='toggle-reminder' data-id='" + safe(item.id) + "'>" + (item.enabled ? "Pause" : "Resume") + "</button>" +
+        "<button class='icon-button' data-action='delete-reminder' data-id='" + safe(item.id) + "' aria-label='Delete reminder'>×</button>" +
+        "</article>";
+    }).join("") + "</div>" : emptyState("◷", "No reminders yet", "Add a reminder for meals, workouts, water or supplements.", "＋ Add reminder", "add-reminder");
+
+    return "<div class='page-heading'><div><span class='eyebrow'>A LITTLE NUDGE, RIGHT ON TIME</span><h1>Reminders</h1><p>Build small routines for training, meals and recovery.</p></div>" +
+      "<div class='heading-actions'><button class='btn btn-primary' data-action='add-reminder'>＋ Add reminder</button></div></div>" +
+      "<div class='grid stats-grid'>" +
+      statCard("Saved reminders", sorted.length, "total", "Your personal routine", "◷") +
+      statCard("Active reminders", activeCount, "active", "Paused reminders stay saved", "✓") +
+      statCard("Notification access", permission === "granted" ? "On" : "Off", "", permission === "granted" ? "This browser can show alerts" : "Enable it below", "◉") +
+      statCard("Reminder storage", "Local", "only", "Included in your FitCheck backup", "⌑") +
+      "</div>" +
+      "<section class='panel'><div class='panel-head'><div><h2>Your reminder schedule</h2><div class='panel-sub'>" + activeCount + " active · " + sorted.length + " saved</div></div>" + permissionButton + "</div>" +
+      "<div class='notice reminder-notice'><strong>How alerts work:</strong> keep FitCheck open in a browser tab or as an installed app for reminders to be checked. Browser permission is needed for system notifications. This local version cannot send scheduled alerts while the browser is completely closed.</div>" +
+      list + "</section>" +
+      "<section class='panel'><div class='panel-head'><div><h2>Make it a habit</h2><div class='panel-sub'>A few useful ideas to get started</div></div></div>" +
+      "<div class='reminder-ideas'><span>♧ Water break</span><span>◉ Meal time</span><span>↗ Gym session</span><span>✳ Supplement check</span></div></section>";
+  }
+
+  function reminderForm() {
+    const now = new Date();
+    const time = String(now.getHours()).padStart(2, "0") + ":" + String(now.getMinutes()).padStart(2, "0");
+    return "<form id='reminder-form'><div class='form-grid'>" +
+      "<div class='form-field full'><label for='reminder-title'>Reminder name</label><input id='reminder-title' name='title' required maxlength='60' placeholder='e.g. Morning workout'></div>" +
+      "<div class='form-field'><label for='reminder-category'>Category</label><select id='reminder-category' name='category'><option>Water</option><option>Meal</option><option>Workout</option><option>Supplements</option><option>Other</option></select></div>" +
+      "<div class='form-field'><label for='reminder-time'>Time</label><input id='reminder-time' name='time' type='time' required value='" + time + "'></div>" +
+      "<div class='form-field'><label for='reminder-frequency'>Repeat</label><select id='reminder-frequency' name='frequency'><option value='daily'>Every day</option><option value='weekdays'>Weekdays (Mon–Fri)</option><option value='once'>Only once</option></select></div>" +
+      "<div class='form-field' id='reminder-date-wrap' hidden><label for='reminder-date'>Reminder date</label><input id='reminder-date' name='date' type='date' min='" + dateKey() + "' value='" + dateKey() + "'></div>" +
+      "<div class='form-field full'><span class='form-hint'>Choose a time in your device's local time zone. You can pause or delete reminders later.</span></div>" +
+      "</div><div class='modal-actions'><button type='button' class='btn btn-ghost' data-action='close-modal'>Cancel</button><button class='btn btn-primary' type='submit'>Save reminder</button></div></form>";
+  }
+
+  function addReminder(form) {
+    const values = Object.fromEntries(new FormData(form).entries());
+    if (values.frequency === "once" && !values.date) {
+      toast("Choose a date for your one-time reminder.");
+      return;
+    }
+    state.reminders.push({
+      id: makeId(),
+      title: values.title.trim(),
+      category: values.category,
+      time: values.time,
+      frequency: values.frequency,
+      date: values.frequency === "once" ? values.date : "",
+      enabled: true,
+      lastFired: ""
+    });
+    saveState();
+    closeModal();
+    render();
+    toast("Reminder saved.");
+    if ("Notification" in window && Notification.permission === "default") {
+      toast("Enable notifications on this page to receive browser alerts.");
+    }
+  }
+
+  async function enableNotifications() {
+    if (!("Notification" in window)) {
+      toast("This browser does not support notifications.");
+      return;
+    }
+    try {
+      const permission = await Notification.requestPermission();
+      render();
+      if (permission === "granted") toast("Browser notifications enabled.");
+      else toast("Notifications were not enabled. Check browser site permissions.");
+    } catch (error) {
+      toast("Could not request notification permission.");
+    }
+  }
+
+  function sendReminderNotification(reminder) {
+    const title = "FitCheck · " + reminder.title;
+    const options = {
+      body: reminder.category + " reminder",
+      icon: "./icon.svg",
+      tag: "fitcheck-" + reminder.id,
+      renotify: true
+    };
+    if ("Notification" in window && Notification.permission === "granted") {
+      if ("serviceWorker" in navigator) {
+        navigator.serviceWorker.ready
+          .then(registration => registration.showNotification(title, options))
+          .catch(() => new Notification(title, options));
+      } else {
+        new Notification(title, options);
+      }
+    } else {
+      toast("Reminder: " + reminder.title);
+    }
+  }
+
+  function checkReminders() {
+    const now = new Date();
+    const today = dateKey(now);
+    const currentTime = String(now.getHours()).padStart(2, "0") + ":" + String(now.getMinutes()).padStart(2, "0");
+    let changed = false;
+    state.reminders.forEach(reminder => {
+      if (!reminder.enabled || reminder.time !== currentTime || reminder.lastFired === today) return;
+      if (reminder.frequency === "once" && reminder.date !== today) return;
+      if (reminder.frequency === "weekdays" && (now.getDay() === 0 || now.getDay() === 6)) return;
+      reminder.lastFired = today;
+      if (reminder.frequency === "once") reminder.enabled = false;
+      changed = true;
+      sendReminderNotification(reminder);
+    });
+    if (changed) {
+      saveState();
+      if (currentPage === "reminders") render();
+    }
+  }
+
   function renderSettings() {
     const profile = state.profile, targets = state.targets;
     return "<div class='page-heading'><div><span class='eyebrow'>MAKE IT YOURS</span><h1>Settings</h1><p>Set up your profile, daily targets and data backups.</p></div></div>" +
@@ -324,7 +475,7 @@
   }
 
   function render() {
-    const pageLabels = { dashboard: "Overview", workouts: "Workouts", nutrition: "Nutrition", progress: "Progress", settings: "Settings" };
+    const pageLabels = { dashboard: "Overview", workouts: "Workouts", nutrition: "Nutrition", progress: "Progress", reminders: "Reminders", settings: "Settings" };
     const page = pageLabels[currentPage] ? currentPage : "dashboard";
     currentPage = page;
     $("#crumb-current").textContent = pageLabels[page];
@@ -334,7 +485,7 @@
     $("#avatar-initial").textContent = (name.trim()[0] || "F").toUpperCase();
     $("#top-avatar").textContent = (name.trim()[0] || "F").toUpperCase();
     $("#today-label").textContent = new Date().toLocaleDateString("en-IN", { weekday: "short", day: "numeric", month: "short" });
-    const views = { dashboard: renderDashboard, workouts: renderWorkouts, nutrition: renderNutrition, progress: renderProgress, settings: renderSettings };
+    const views = { dashboard: renderDashboard, workouts: renderWorkouts, nutrition: renderNutrition, progress: renderProgress, reminders: renderReminders, settings: renderSettings };
     $("#view-root").innerHTML = views[page]();
   }
 
@@ -477,7 +628,8 @@
           profile: { ...STARTER.profile, ...(imported.profile || {}) },
           targets: { ...STARTER.targets, ...(imported.targets || {}) },
           weighIns: Array.isArray(imported.weighIns) ? imported.weighIns : [],
-          waterByDate: imported.waterByDate || {}
+          waterByDate: imported.waterByDate || {},
+          reminders: Array.isArray(imported.reminders) ? imported.reminders : []
         };
         saveState(); render(); toast("Backup imported successfully.");
       } catch (error) {
@@ -503,6 +655,16 @@
     if (action === "add-meal") openModal("Log a meal", mealForm());
     if (action === "add-workout") openModal("Log a workout", workoutForm());
     if (action === "add-weight") openModal("Add weigh-in", weightForm(), "PROGRESS CHECK-IN");
+    if (action === "add-reminder") openModal("Create a reminder", reminderForm(), "BUILD YOUR ROUTINE");
+    if (action === "enable-notifications") enableNotifications();
+    if (action === "toggle-reminder") {
+      const item = state.reminders.find(reminder => reminder.id === button.dataset.id);
+      if (item) { item.enabled = !item.enabled; saveState(); render(); toast(item.enabled ? "Reminder resumed." : "Reminder paused."); }
+    }
+    if (action === "delete-reminder") {
+      state.reminders = state.reminders.filter(item => item.id !== button.dataset.id);
+      saveState(); render(); toast("Reminder deleted.");
+    }
     if (action === "close-modal") closeModal();
     if (action === "add-exercise") $("#exercise-builder").insertAdjacentHTML("beforeend", exerciseRow());
     if (action === "remove-exercise") {
@@ -540,11 +702,19 @@
     if (event.target.id === "meal-form") { event.preventDefault(); addMeal(event.target); }
     if (event.target.id === "workout-form") { event.preventDefault(); addWorkout(event.target); }
     if (event.target.id === "weight-form") { event.preventDefault(); addWeight(event.target); }
+    if (event.target.id === "reminder-form") { event.preventDefault(); addReminder(event.target); }
     if (event.target.id === "profile-form") { event.preventDefault(); saveProfile(event.target); }
     if (event.target.id === "targets-form") { event.preventDefault(); saveTargets(event.target); }
   });
 
   document.addEventListener("change", event => {
+    if (event.target.id === "reminder-frequency") {
+      const dateWrap = $("#reminder-date-wrap");
+      const dateInput = $("#reminder-date");
+      const isOnce = event.target.value === "once";
+      dateWrap.hidden = !isOnce;
+      dateInput.required = isOnce;
+    }
     if (event.target.id === "import-file") {
       importData(event.target.files && event.target.files[0]);
       event.target.value = "";
@@ -565,4 +735,6 @@
   }
 
   render();
+  checkReminders();
+  window.setInterval(checkReminders, 15000);
 })();
