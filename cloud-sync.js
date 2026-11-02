@@ -113,7 +113,8 @@ async function prepareForCloud(snapshot) {
       let url = photo.url || "";
       if (!url && photo.data && (photo.data.startsWith("http://") || photo.data.startsWith("https://"))) url = photo.data;
       if (!url && photo.data && photo.data.startsWith("data:")) {
-        const { ref: storageRef, uploadBytes, getDownloadURL } = await import("https://www.gstatic.com/firebasejs/" + FITCHECK_FIREBASE_VERSION + "/firebase-storage.js");
+        const { getStorage, ref: storageRef, uploadBytes, getDownloadURL } = await import("https://www.gstatic.com/firebasejs/" + FITCHECK_FIREBASE_VERSION + "/firebase-storage.js");
+        storage = storage || getStorage(auth.app);
         const objectRef = storageRef(storage, "users/" + currentUser.uid + "/progress-photos/" + encodeURIComponent(photo.id) + ".jpg");
         await uploadBytes(objectRef, photoDataToBlob(photo.data), { contentType: "image/jpeg" });
         url = await getDownloadURL(objectRef);
@@ -236,17 +237,15 @@ async function bootCloud() {
   }
   try {
     const base = "https://www.gstatic.com/firebasejs/" + FITCHECK_FIREBASE_VERSION + "/";
-    const [appSdk, authSdk, dbSdk, storageSdk] = await Promise.all([
+    const [appSdk, authSdk, dbSdk] = await Promise.all([
       import(base + "firebase-app.js"),
       import(base + "firebase-auth.js"),
-      import(base + "firebase-firestore.js"),
-      import(base + "firebase-storage.js")
+      import(base + "firebase-firestore.js")
     ]);
     const app = appSdk.initializeApp(CONFIG);
     window.FitCheckAuth = authSdk;
     auth = authSdk.getAuth(app);
     db = dbSdk.getFirestore(app);
-    storage = storageSdk.getStorage(app);
     window.FitCheckFirebase = { ...dbSdk, serverTimestamp: dbSdk.serverTimestamp };
     await authSdk.setPersistence(auth, authSdk.browserLocalPersistence);
     await authSdk.getRedirectResult(auth).catch(() => null);
