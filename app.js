@@ -9,7 +9,8 @@
     workouts: [],
     weighIns: [],
     waterByDate: {},
-    reminders: []
+    reminders: [],
+    routines: []
   };
 
   let state = loadState();
@@ -29,7 +30,8 @@
         workouts: Array.isArray(parsed.workouts) ? parsed.workouts : [],
         weighIns: Array.isArray(parsed.weighIns) ? parsed.weighIns : [],
         waterByDate: parsed.waterByDate || {},
-        reminders: Array.isArray(parsed.reminders) ? parsed.reminders : []
+        reminders: Array.isArray(parsed.reminders) ? parsed.reminders : [],
+        routines: Array.isArray(parsed.routines) ? parsed.routines : []
       };
     } catch (error) {
       console.warn("FitCheck could not read saved data.", error);
@@ -123,14 +125,19 @@
   }
 
   function renderWorkoutItems(items, showDelete = false) {
-    if (!items.length) return emptyState("↗", "No workouts logged", "Your training sessions will show up here.", "Log a workout", "add-workout");
-    return "<div class='workout-list'>" + items.slice().sort((a, b) => (b.createdAt || "").localeCompare(a.createdAt || "")).map(item => {
-      const exerciseCount = (item.exercises || []).length;
-      const setCount = (item.exercises || []).reduce((sum, exercise) => sum + number(exercise.sets), 0);
-      return "<div class='list-item'><div class='list-icon'>↗</div><div class='list-copy'><strong>" + safe(item.name) +
+    if (!items.length) return emptyState("↗", "No workouts logged", "Start from a saved routine or log a workout from scratch.", "Build your first routine", "scroll-routine-builder");
+    return "<div class='workout-list'>" + items.slice().sort((a, b) => (b.createdAt || b.date || "").localeCompare(a.createdAt || a.date || "")).map(item => {
+      const exercises = item.exercises || [];
+      const exerciseCount = exercises.length;
+      const setCount = exercises.reduce((sum, exercise) => sum + number(exercise.sets), 0);
+      const details = exercises.length ? "<details class='workout-breakdown'><summary>View exercise breakdown</summary><div class='workout-breakdown-list'>" +
+        exercises.map(exercise => "<div><strong>" + safe(exercise.name) + "</strong><span>" + safe(exercise.sets) + " sets · " + safe(exercise.reps) + " reps · " + round(exercise.load) + " kg</span></div>").join("") +
+        "</div>" + (item.notes ? "<p class='workout-saved-note'>" + safe(item.notes) + "</p>" : "") + "</details>" : "";
+      return "<article class='workout-history-card'><div class='list-item'><div class='list-icon'>↗</div><div class='list-copy'><strong>" + safe(item.name) +
         "</strong><span>" + safe(item.muscle || "Training") + " · " + exerciseCount + " exercises · " + setCount + " sets</span></div><div class='list-meta'>" +
         safe(item.duration || 0) + " min<small>" + prettyDate(item.date) + "</small></div>" +
-        (showDelete ? "<button class='icon-button' data-action='delete-workout' data-id='" + safe(item.id) + "' aria-label='Delete workout'>×</button>" : "") + "</div>";
+        (showDelete ? "<button class='icon-button' data-action='edit-workout' data-id='" + safe(item.id) + "' aria-label='Edit workout'>✎</button><button class='icon-button' data-action='delete-workout' data-id='" + safe(item.id) + "' aria-label='Delete workout'>×</button>" : "") +
+        "</div>" + details + "</article>";
     }).join("") + "</div>";
   }
 
@@ -236,20 +243,142 @@
       }).join("") + "</div></section></div></div>";
   }
 
+
+  const EXERCISE_LIBRARY = {
+    Chest: ["Barbell bench press", "Incline dumbbell press", "Decline bench press", "Cable chest fly", "Push-ups"],
+    Back: ["Lat pulldown", "Seated cable row", "One-arm dumbbell row", "Chest-supported row", "Back extension"],
+    Shoulders: ["Seated shoulder press", "Dumbbell lateral raise", "Rear-delt fly", "Front raise", "Face pull"],
+    Biceps: ["Barbell curl", "Alternating dumbbell curl", "Hammer curl", "Incline dumbbell curl", "Cable curl"],
+    Triceps: ["Rope pushdown", "Overhead cable extension", "Skull crusher", "Close-grip bench press", "Dumbbell kickback"],
+    Legs: ["Barbell squat", "Leg press", "Romanian deadlift", "Leg extension", "Leg curl"],
+    Core: ["Plank", "Cable crunch", "Hanging knee raise", "Reverse crunch", "Dead bug"]
+  };
+
+  function routineExerciseCard(name, savedExercise) {
+    const checked = savedExercise ? "checked" : "checked";
+    const sets = savedExercise ? savedExercise.sets : 3;
+    const reps = savedExercise ? savedExercise.reps : "20 / 15 / 12";
+    const load = savedExercise ? savedExercise.load : 0;
+    return "<div class='routine-exercise-card' data-exercise='" + safe(name) + "'>" +
+      "<label class='routine-exercise-top'><input class='routine-check' type='checkbox' " + checked + "><span>" + safe(name) + "</span><i>✓</i></label>" +
+      "<div class='routine-exercise-fields'><label>Sets<input data-routine-sets type='number' min='1' max='20' value='" + safe(sets) + "'></label>" +
+      "<label>Reps<input data-routine-reps maxlength='24' value='" + safe(reps) + "'></label>" +
+      "<label>Load kg<input data-routine-load type='number' min='0' step='0.5' value='" + safe(load) + "'></label></div></div>";
+  }
+
+  function customRoutineExerciseRow(exercise = {}) {
+    return "<div class='routine-custom-row'><input data-custom-name maxlength='60' placeholder='Your custom exercise' value='" + safe(exercise.name || "") + "'>" +
+      "<input data-custom-sets type='number' min='1' max='20' value='" + safe(exercise.sets || 3) + "' aria-label='Sets'>" +
+      "<input data-custom-reps maxlength='24' value='" + safe(exercise.reps || "20 / 15 / 12") + "' aria-label='Reps'>" +
+      "<input data-custom-load type='number' min='0' step='0.5' value='" + safe(exercise.load || 0) + "' aria-label='Load in kilograms'>" +
+      "<button type='button' class='remove-exercise' data-action='remove-custom-routine-exercise' aria-label='Remove custom exercise'>×</button></div>";
+  }
+
+  function routineExerciseOptions(muscle, selectedExercises) {
+    const library = EXERCISE_LIBRARY[muscle] || [];
+    const selectedByName = new Map((selectedExercises || []).map(item => [item.name, item]));
+    return library.map(name => routineExerciseCard(name, selectedByName.get(name) || null)).join("");
+  }
+
+  function renderRoutineBuilder(routine = null) {
+    const muscle = routine ? routine.muscle : "Chest";
+    const libraryNames = EXERCISE_LIBRARY[muscle] || [];
+    const customExercises = routine ? (routine.exercises || []).filter(item => !libraryNames.includes(item.name)) : [];
+    const exerciseOptions = routine
+      ? (routine.exercises || []).filter(item => libraryNames.includes(item.name)).map(item => routineExerciseCard(item.name, item)).join("") +
+        libraryNames.filter(name => !(routine.exercises || []).some(item => item.name === name)).map(name => routineExerciseCard(name, null)).join("")
+      : routineExerciseOptions(muscle, []);
+    const routineName = routine ? routine.name : muscle + " day";
+    return "<form id='routine-form' data-editing='" + safe(routine ? routine.id : "") + "'>" +
+      "<div class='routine-builder-head'><div><span class='eyebrow'>YOUR TRAINING BLUEPRINT</span><h3>" + (routine ? "Edit routine" : "Create a routine") + "</h3>" +
+      "<p>Choose exercises, set your working sets and save this day for reuse.</p></div>" +
+      (routine ? "<button type='button' class='btn btn-ghost btn-small' data-action='cancel-routine-edit'>Cancel edit</button>" : "") + "</div>" +
+      "<div class='form-grid routine-form-fields'><div class='form-field'><label for='routine-name'>Routine name</label><input id='routine-name' name='name' required maxlength='50' value='" + safe(routineName) + "' placeholder='e.g. Chest day'></div>" +
+      "<div class='form-field'><label for='routine-muscle'>Muscle group</label><select id='routine-muscle' name='muscle' data-previous='" + safe(muscle) + "'>" +
+      Object.keys(EXERCISE_LIBRARY).map(name => "<option " + (name === muscle ? "selected" : "") + ">" + name + "</option>").join("") +
+      "</select></div></div>" +
+      "<div class='routine-library-head'><div><strong>Exercise library</strong><span>Five starting options for each muscle group</span></div><span class='tag'>3 SETS · 20 / 15 / 12 REPS</span></div>" +
+      "<div class='routine-exercise-grid' id='routine-exercise-grid'>" + exerciseOptions + "</div>" +
+      "<div class='routine-library-head custom-head'><div><strong>Custom exercises</strong><span>Add movements that are not in the library</span></div>" +
+      "<button type='button' class='btn btn-secondary btn-small' data-action='add-custom-routine-exercise'>＋ Add custom</button></div>" +
+      "<div class='routine-custom-list' id='routine-custom-list'>" + customExercises.map(customRoutineExerciseRow).join("") + "</div>" +
+      "<div class='form-field routine-notes-field'><label for='routine-notes'>Training notes</label><textarea id='routine-notes' name='notes' rows='3' maxlength='500' placeholder='Write your cues, warm-up, rest times or anything you want to remember...'>" + safe(routine ? routine.notes : "") + "</textarea></div>" +
+      "<div class='routine-form-footer'><span class='small-note'>Your routines are saved on this device and included in backups.</span><button class='btn btn-primary' type='submit'>" + (routine ? "Update routine" : "Save routine") + "</button></div>" +
+      "</form>";
+  }
+
+  function renderSavedRoutines() {
+    if (!state.routines.length) {
+      return "<div class='routine-empty'><div class='routine-empty-mark'>＋</div><strong>Your routine collection starts here</strong><p>Save a chest, back, legs or any custom training day. Start a workout from it whenever you are ready.</p></div>";
+    }
+    return "<div class='saved-routine-list'>" + state.routines.map(routine => {
+      const exerciseCount = (routine.exercises || []).length;
+      const sets = (routine.exercises || []).reduce((sum, item) => sum + number(item.sets), 0);
+      return "<article class='saved-routine-card'><div class='saved-routine-top'><div><span class='routine-muscle-tag'>" + safe(routine.muscle) + "</span><h4>" + safe(routine.name) + "</h4></div>" +
+        "<button type='button' class='icon-button' data-action='edit-routine' data-id='" + safe(routine.id) + "' aria-label='Edit routine'>✎</button></div>" +
+        "<p>" + exerciseCount + " exercises <span>·</span> " + sets + " working sets</p>" +
+        "<div class='routine-exercise-chips'>" + (routine.exercises || []).slice(0, 5).map(item => "<span>" + safe(item.name) + "</span>").join("") +
+        ((routine.exercises || []).length > 5 ? "<span>+" + (routine.exercises.length - 5) + " more</span>" : "") + "</div>" +
+        (routine.notes ? "<div class='saved-routine-note'>" + safe(routine.notes) + "</div>" : "") +
+        "<div class='saved-routine-actions'><button type='button' class='btn btn-primary btn-small' data-action='start-routine' data-id='" + safe(routine.id) + "'>Start workout ↗</button>" +
+        "<button type='button' class='btn btn-ghost btn-small' data-action='delete-routine' data-id='" + safe(routine.id) + "'>Delete</button></div></article>";
+    }).join("") + "</div>";
+  }
+
+  function saveRoutine(form) {
+    const editingId = form.dataset.editing || "";
+    const values = Object.fromEntries(new FormData(form).entries());
+    const selected = $(".routine-exercise-card", form).filter(card => $(".routine-check", card).checked).map(card => ({
+      name: card.dataset.exercise,
+      sets: number($("[data-routine-sets]", card).value),
+      reps: $("[data-routine-reps]", card).value.trim(),
+      load: number($("[data-routine-load]", card).value)
+    }));
+    const custom = $(".routine-custom-row", form).map(row => ({
+      name: $("[data-custom-name]", row).value.trim(),
+      sets: number($("[data-custom-sets]", row).value),
+      reps: $("[data-custom-reps]", row).value.trim(),
+      load: number($("[data-custom-load]", row).value)
+    })).filter(item => item.name);
+    const exercises = selected.concat(custom);
+    if (!exercises.length) {
+      toast("Select at least one exercise or add a custom one.");
+      return;
+    }
+    const routine = {
+      id: editingId || makeId(),
+      name: values.name.trim(),
+      muscle: values.muscle,
+      notes: values.notes.trim(),
+      exercises,
+      updatedAt: new Date().toISOString()
+    };
+    const existingIndex = state.routines.findIndex(item => item.id === editingId);
+    if (existingIndex >= 0) state.routines[existingIndex] = routine;
+    else state.routines.unshift(routine);
+    saveState();
+    editingRoutineId = null;
+    render();
+    toast(existingIndex >= 0 ? "Routine updated." : "Routine saved. Ready when you are.");
+  }
+
   function renderWorkouts() {
     const totalSets = state.workouts.reduce((sum, workout) => sum + (workout.exercises || []).reduce((sub, exercise) => sub + number(exercise.sets), 0), 0);
     const totalMinutes = state.workouts.reduce((sum, workout) => sum + number(workout.duration), 0);
     const muscles = [...new Set(state.workouts.map(item => item.muscle).filter(Boolean))];
-    return "<div class='page-heading'><div><span class='eyebrow'>SHOW UP. PUT IN THE WORK.</span><h1>Workout log</h1><p>Keep a record of your sessions, exercises, sets and loads.</p></div>" +
-      "<div class='heading-actions'><button class='btn btn-primary' data-action='add-workout'>＋ Log workout</button></div></div>" +
+    const editingRoutine = editingRoutineId ? state.routines.find(item => item.id === editingRoutineId) : null;
+    return "<div class='page-heading'><div><span class='eyebrow'>SHOW UP. PUT IN THE WORK.</span><h1>Workout studio</h1><p>Build reusable training days, then turn them into logged workouts.</p></div>" +
+      "<div class='heading-actions'><button class='btn btn-secondary' data-action='add-workout'>＋ Quick log</button></div></div>" +
       "<div class='grid stats-grid'>" + statCard("Sessions logged", state.workouts.length, "total", "Every session you record", "↗") +
       statCard("Total sets", totalSets, "sets", "Across all logged sessions", "▤") +
       statCard("Training time", Math.round(totalMinutes / 60 * 10) / 10, "hours", "Based on your logged duration", "◷") +
-      statCard("Muscle groups", muscles.length, "groups", muscles.length ? muscles.slice(0, 3).map(safe).join(", ") : "Start your first session", "✳") + "</div>" +
-      "<div class='page-columns'><section class='panel'><div class='panel-head'><div><h2>Session history</h2><div class='panel-sub'>Most recent sessions first</div></div></div>" +
-      renderWorkoutItems(state.workouts, true) + "</section><section class='panel'><div class='panel-head'><div><h2>Training notes</h2><div class='panel-sub'>Build your own routine</div></div></div>" +
-      "<div class='notice'><strong>Track the details.</strong><br>Log the exercise, working sets, reps and weight used. Over time this makes it easier to see when you are progressing.</div>" +
-      "<div class='divider'></div><div class='small-note'>FitCheck does not prescribe a workout plan. Use this space to record the routine you follow and any notes that matter to you.</div></section></div>";
+      statCard("Saved routines", state.routines.length, "plans", muscles.length ? muscles.slice(0, 3).map(safe).join(", ") : "Build your first training day", "✳") + "</div>" +
+      "<section class='panel routine-studio-panel'><div class='panel-head'><div><span class='eyebrow'>PLAN · SAVE · REPEAT</span><h2>Routine studio</h2><div class='panel-sub'>Create a routine once. Reuse it whenever you train that muscle group.</div></div><span class='tag'>PERSONAL PLAN BUILDER</span></div>" +
+      "<div class='routine-studio-grid'><div class='routine-builder-column'>" + renderRoutineBuilder(editingRoutine) + "</div>" +
+      "<aside class='routine-saved-column'><div class='saved-routine-heading'><div><h3>Saved routines</h3><p>" + state.routines.length + " training day(s) ready</p></div><span class='saved-count'>" + state.routines.length + "</span></div>" +
+      renderSavedRoutines() + "</aside></div></section>" +
+      "<section class='panel session-history-panel'><div class='panel-head'><div><h2>Session history</h2><div class='panel-sub'>Your completed training logs, newest first</div></div><button class='inline-link' data-action='add-workout'>＋ Log without a routine</button></div>" +
+      renderWorkoutItems(state.workouts, true) + "</section>";
   }
 
   function renderNutrition() {
@@ -528,24 +657,27 @@
       "</div><div class='modal-actions'><button type='button' class='btn btn-ghost' data-action='close-modal'>Cancel</button><button class='btn btn-primary' type='submit'>Save meal</button></div></form>";
   }
 
-  function exerciseRow() {
-    return "<div class='exercise-row'><div class='form-field'><label>Exercise</label><input name='exerciseName' required placeholder='e.g. Bench press'></div>" +
-      "<div class='form-field'><label>Sets</label><input name='sets' type='number' min='1' max='20' value='3' required></div>" +
-      "<div class='form-field'><label>Reps</label><input name='reps' type='text' maxlength='18' value='12' required></div>" +
-      "<div class='form-field'><label>Load (kg)</label><input name='load' type='number' min='0' step='0.5' value='0'></div>" +
+  function exerciseRow(exercise = {}) {
+    return "<div class='exercise-row'><div class='form-field'><label>Exercise</label><input name='exerciseName' required placeholder='e.g. Bench press' value='" + safe(exercise.name || "") + "'></div>" +
+      "<div class='form-field'><label>Sets</label><input name='sets' type='number' min='1' max='20' value='" + safe(exercise.sets || 3) + "' required></div>" +
+      "<div class='form-field'><label>Reps</label><input name='reps' type='text' maxlength='24' value='" + safe(exercise.reps || "20 / 15 / 12") + "' required></div>" +
+      "<div class='form-field'><label>Load (kg)</label><input name='load' type='number' min='0' step='0.5' value='" + safe(exercise.load || 0) + "'></div>" +
       "<button type='button' class='remove-exercise' data-action='remove-exercise' aria-label='Remove exercise'>×</button></div>";
   }
 
-  function workoutForm() {
-    return "<form id='workout-form'><div class='form-grid'>" +
-      "<div class='form-field'><label for='workout-name'>Session name</label><input id='workout-name' name='name' required maxlength='60' placeholder='e.g. Push day'></div>" +
-      "<div class='form-field'><label for='workout-muscle'>Focus</label><select id='workout-muscle' name='muscle'><option>Chest</option><option>Back</option><option>Shoulders</option><option>Arms</option><option>Legs</option><option>Core</option><option>Full body</option><option>Cardio</option><option>Other</option></select></div>" +
-      "<div class='form-field'><label for='workout-duration'>Duration (minutes)</label><input id='workout-duration' name='duration' type='number' min='0' max='600' value='60'></div>" +
-      "<div class='form-field'><label for='workout-date'>Date</label><input id='workout-date' name='date' type='date' value='" + dateKey() + "' required></div></div>" +
-      "<div class='section-title'>Exercises</div><div class='exercise-builder' id='exercise-builder'>" + exerciseRow() + "</div>" +
+  function workoutForm(workout = null) {
+    const exercises = workout ? (workout.exercises || []) : [];
+    const rows = exercises.length ? exercises.map(exerciseRow).join("") : exerciseRow();
+    const focuses = ["Chest", "Back", "Shoulders", "Biceps", "Triceps", "Legs", "Core", "Full body", "Cardio", "Other"];
+    return "<form id='workout-form' data-editing='" + safe(workout ? workout.id : "") + "'><div class='form-grid'>" +
+      "<div class='form-field'><label for='workout-name'>Session name</label><input id='workout-name' name='name' required maxlength='60' placeholder='e.g. Push day' value='" + safe(workout ? workout.name : "") + "'></div>" +
+      "<div class='form-field'><label for='workout-muscle'>Focus</label><select id='workout-muscle' name='muscle'>" + focuses.map(name => "<option " + (workout && workout.muscle === name ? "selected" : "") + ">" + name + "</option>").join("") + "</select></div>" +
+      "<div class='form-field'><label for='workout-duration'>Duration (minutes)</label><input id='workout-duration' name='duration' type='number' min='0' max='600' value='" + safe(workout ? workout.duration : 60) + "'></div>" +
+      "<div class='form-field'><label for='workout-date'>Date</label><input id='workout-date' name='date' type='date' value='" + safe(workout ? workout.date : dateKey()) + "' required></div></div>" +
+      "<div class='section-title'>Exercises</div><div class='exercise-builder' id='exercise-builder'>" + rows + "</div>" +
       "<button type='button' class='btn btn-secondary btn-small' style='margin-top:10px' data-action='add-exercise'>＋ Add exercise</button>" +
-      "<div class='form-field' style='margin-top:14px'><label for='workout-notes'>Session notes (optional)</label><textarea id='workout-notes' name='notes' rows='2' maxlength='300' placeholder='How did the session feel?'></textarea></div>" +
-      "<div class='modal-actions'><button type='button' class='btn btn-ghost' data-action='close-modal'>Cancel</button><button class='btn btn-primary' type='submit'>Save workout</button></div></form>";
+      "<div class='form-field' style='margin-top:14px'><label for='workout-notes'>Session notes (optional)</label><textarea id='workout-notes' name='notes' rows='2' maxlength='500' placeholder='How did the session feel?'>" + safe(workout ? workout.notes : "") + "</textarea></div>" +
+      "<div class='modal-actions'><button type='button' class='btn btn-ghost' data-action='close-modal'>Cancel</button><button class='btn btn-primary' type='submit'>" + (workout ? "Update workout" : "Save workout") + "</button></div></form>";
   }
 
   function weightForm() {
@@ -569,7 +701,7 @@
 
   function addWorkout(form) {
     const values = Object.fromEntries(new FormData(form).entries());
-    const rows = $$(".exercise-row", $("#exercise-builder"));
+    const rows = $(".exercise-row", $("#exercise-builder"));
     const exercises = rows.map(row => ({
       name: $("input[name=exerciseName]", row).value.trim(),
       sets: number($("input[name=sets]", row).value),
@@ -577,11 +709,21 @@
       load: number($("input[name=load]", row).value)
     })).filter(item => item.name);
     if (!exercises.length) { toast("Add at least one exercise."); return; }
-    state.workouts.push({
-      id: makeId(), createdAt: new Date().toISOString(), date: values.date || dateKey(),
-      name: values.name.trim(), muscle: values.muscle, duration: number(values.duration), notes: values.notes.trim(), exercises
-    });
-    saveState(); closeModal(); render(); toast("Workout saved. Nice work.");
+    const editingId = form.dataset.editing || "";
+    const workout = {
+      id: editingId || makeId(),
+      createdAt: editingId ? (state.workouts.find(item => item.id === editingId)?.createdAt || new Date().toISOString()) : new Date().toISOString(),
+      date: values.date || dateKey(),
+      name: values.name.trim(),
+      muscle: values.muscle,
+      duration: number(values.duration),
+      notes: values.notes.trim(),
+      exercises
+    };
+    const existingIndex = state.workouts.findIndex(item => item.id === editingId);
+    if (existingIndex >= 0) state.workouts[existingIndex] = workout;
+    else state.workouts.push(workout);
+    saveState(); closeModal(); render(); toast(existingIndex >= 0 ? "Workout updated." : "Workout saved. Nice work.");
   }
 
   function addWeight(form) {
@@ -629,7 +771,8 @@
           targets: { ...STARTER.targets, ...(imported.targets || {}) },
           weighIns: Array.isArray(imported.weighIns) ? imported.weighIns : [],
           waterByDate: imported.waterByDate || {},
-          reminders: Array.isArray(imported.reminders) ? imported.reminders : []
+          reminders: Array.isArray(imported.reminders) ? imported.reminders : [],
+          routines: Array.isArray(imported.routines) ? imported.routines : []
         };
         saveState(); render(); toast("Backup imported successfully.");
       } catch (error) {
@@ -654,6 +797,25 @@
 
     if (action === "add-meal") openModal("Log a meal", mealForm());
     if (action === "add-workout") openModal("Log a workout", workoutForm());
+    if (action === "add-custom-routine-exercise") $("#routine-custom-list").insertAdjacentHTML("beforeend", customRoutineExerciseRow());
+    if (action === "remove-custom-routine-exercise") button.closest(".routine-custom-row").remove();
+    if (action === "cancel-routine-edit") { editingRoutineId = null; render(); }
+    if (action === "edit-routine") { editingRoutineId = button.dataset.id; render(); $("#routine-form").scrollIntoView({ behavior: "smooth", block: "start" }); }
+    if (action === "delete-routine") {
+      if (confirm("Delete this saved routine? Your completed workout history will stay untouched.")) {
+        state.routines = state.routines.filter(item => item.id !== button.dataset.id);
+        if (editingRoutineId === button.dataset.id) editingRoutineId = null;
+        saveState(); render(); toast("Routine deleted.");
+      }
+    }
+    if (action === "start-routine") {
+      const routine = state.routines.find(item => item.id === button.dataset.id);
+      if (routine) openModal("Start " + routine.name, workoutForm({ name: routine.name, muscle: routine.muscle, date: dateKey(), duration: 60, notes: routine.notes, exercises: routine.exercises }));
+    }
+    if (action === "edit-workout") {
+      const workout = state.workouts.find(item => item.id === button.dataset.id);
+      if (workout) openModal("Edit workout", workoutForm(workout), "UPDATE YOUR SESSION");
+    }
     if (action === "add-weight") openModal("Add weigh-in", weightForm(), "PROGRESS CHECK-IN");
     if (action === "add-reminder") openModal("Create a reminder", reminderForm(), "BUILD YOUR ROUTINE");
     if (action === "enable-notifications") enableNotifications();
@@ -701,6 +863,7 @@
   document.addEventListener("submit", event => {
     if (event.target.id === "meal-form") { event.preventDefault(); addMeal(event.target); }
     if (event.target.id === "workout-form") { event.preventDefault(); addWorkout(event.target); }
+    if (event.target.id === "routine-form") { event.preventDefault(); saveRoutine(event.target); }
     if (event.target.id === "weight-form") { event.preventDefault(); addWeight(event.target); }
     if (event.target.id === "reminder-form") { event.preventDefault(); addReminder(event.target); }
     if (event.target.id === "profile-form") { event.preventDefault(); saveProfile(event.target); }
@@ -708,6 +871,18 @@
   });
 
   document.addEventListener("change", event => {
+    if (event.target.id === "routine-muscle") {
+      const form = $("#routine-form");
+      const previousName = $("#routine-name").value.trim();
+      const previousMuscle = form.querySelector("#routine-muscle").dataset.previous || "Chest";
+      if (!previousName || previousName === previousMuscle + " day") $("#routine-name").value = event.target.value + " day";
+      event.target.dataset.previous = event.target.value;
+      $("#routine-exercise-grid").innerHTML = routineExerciseOptions(event.target.value, []);
+    }
+    if (event.target.classList.contains("routine-check")) {
+      const card = event.target.closest(".routine-exercise-card");
+      $("input", card).forEach(input => { if (input !== event.target) input.disabled = !event.target.checked; });
+    }
     if (event.target.id === "reminder-frequency") {
       const dateWrap = $("#reminder-date-wrap");
       const dateInput = $("#reminder-date");
