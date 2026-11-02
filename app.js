@@ -540,6 +540,7 @@
     if(themeButton){themeButton.textContent=state.theme==="dark"?"☼":"☾";themeButton.title=state.theme==="dark"?"Switch to light theme":"Switch to dark theme";}
     const views={dashboard:renderDashboard,workouts:renderWorkouts,nutrition:renderNutrition,progress:renderProgress,reminders:renderReminders,settings:renderSettings};
     $("#view-root").innerHTML=views[currentPage]();
+    if(currentPage==="settings" && window.FitCheckCloud && window.FitCheckCloud.refreshStatus) window.FitCheckCloud.refreshStatus();
   }
 
   function mealForm(food=null) {
