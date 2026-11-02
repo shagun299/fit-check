@@ -28,6 +28,30 @@
     {id:"shake",name:"Banana milk shake",serving:"300 ml",calories:270,protein:10,carbs:43,fat:7}
   ];
 
+  const COACH_NOTES = [
+    {title:"Progress loves consistency",text:"A normal workout done regularly beats a perfect workout you keep postponing."},
+    {title:"Protein, spread through the day",text:"Include a useful protein source in each main meal. Eggs, dal, curd, paneer and soya all count."},
+    {title:"Warm up with purpose",text:"Give your first five to ten minutes to easy movement and lighter practice sets."},
+    {title:"Add weight only when form is ready",text:"Own the reps first. Increase load in small steps when every set stays controlled."},
+    {title:"Water is part of the plan",text:"Sip throughout the day, and drink a little more around sweaty training sessions."},
+    {title:"Sleep is training too",text:"Your recovery routine matters. Keep a regular bedtime and make room for enough sleep."},
+    {title:"Track the small wins",text:"One extra rep, steadier technique or a more consistent week is meaningful progress."},
+    {title:"Build a balanced plate",text:"Pair grains with pulses, vegetables and a protein-rich food to make meals more satisfying."},
+    {title:"Rest between hard sets",text:"Take enough rest to repeat strong, controlled reps instead of rushing every set."},
+    {title:"Use your food portions",text:"Food-library values are estimates. Your bowl, roti size and cooking oil can change the total."},
+    {title:"Don't chase soreness",text:"A workout can be effective without leaving you sore. Watch strength and consistency instead."},
+    {title:"Keep a simple routine",text:"A plan you can repeat on busy days is more useful than a complicated plan you rarely follow."},
+    {title:"Fibre helps your meals",text:"Add fruits, vegetables, beans or whole grains across the day for fibre and micronutrients."},
+    {title:"Progress is not a straight line",text:"Daily weight naturally moves around. Compare similar conditions and look at the longer trend."},
+    {title:"Keep reps controlled",text:"Use a steady tempo and a comfortable range of motion. Don't sacrifice technique for speed."},
+    {title:"Prepare your next meal",text:"A little planning makes it easier to meet your nutrition goals when the day gets busy."},
+    {title:"Choose recovery over ego",text:"Sharp pain is a stop signal. Reduce the load, adjust the movement or take a rest day."},
+    {title:"Make every set count",text:"Focus on the target muscle, stable posture and a repeatable range of motion."},
+    {title:"Consistency beats extremes",text:"You don't need a perfect day. Return to your usual habits at the next meal or session."},
+    {title:"Review the week, not one day",text:"Look at your weekly workouts, protein average and water trend to decide what to improve next."}
+  ];
+  let coachNoteIndex = 0;
+
   const EXERCISE_LIBRARY = {
     Chest:["Barbell bench press","Incline dumbbell press","Decline bench press","Cable chest fly","Push-ups"],
     Back:["Lat pulldown","Seated cable row","One-arm dumbbell row","Chest-supported row","Back extension"],
@@ -79,6 +103,7 @@
   function saveState() {
     try {
       localStorage.setItem(STORAGE_KEY,JSON.stringify(state));
+      if(window.FitCheckCloud && window.FitCheckCloud.queueSync) window.FitCheckCloud.queueSync(state);
       return true;
     } catch (error) {
       toast("Could not save. Export a backup and check browser storage.");
@@ -167,6 +192,15 @@
       "<div><strong>"+w.workouts.length+"</strong><span>workout sessions</span></div><div><strong>"+Math.round(w.avgProtein)+" g</strong><span>protein / logged day</span></div><div><strong>"+Math.round(w.avgCalories)+"</strong><span>calories / logged day</span></div><div><strong>"+(w.avgWater/1000).toFixed(1)+" L</strong><span>water / day</span></div></div></section>";
   }
 
+  function renderVisualHero() {
+    return "<section class='visual-hero'><div class='visual-hero-copy'><span class='eyebrow'>FITCHECK · YOUR DAILY RESET</span><h2>Build strength.<br>Keep your balance.</h2><p>Train with intention, eat with awareness and notice the progress you make every week.</p><span class='hero-stamp'>YOUR FITNESS, IN FOCUS <b>✦</b></span></div><div class='visual-hero-image'><img src='https://fuel-it-right.ghost.io/content/images/2025/09/protein.jpeg' alt='Balanced Indian meal with dal, rice, eggs and paneer' loading='lazy'></div></section>";
+  }
+
+  function renderCoachNotes() {
+    const note = COACH_NOTES[coachNoteIndex];
+    return "<section class='coach-note-card'><div class='coach-note-icon'>✦</div><div class='coach-note-copy'><span class='eyebrow'>COACH NOTE · " + String(coachNoteIndex+1).padStart(2,"0") + " / " + COACH_NOTES.length + "</span><h2 id='coach-note-title'>" + safe(note.title) + "</h2><p id='coach-note-text'>" + safe(note.text) + "</p><div class='coach-note-bottom'><span id='coach-note-count'>NOTE " + String(coachNoteIndex+1).padStart(2,"0") + "</span><span>Fresh thought every 5–6 seconds</span></div></div><div class='coach-note-orbit'>✧</div></section>";
+  }
+
   function renderDashboard() {
     const meals=todayMeals(),workouts=todayWorkouts(),totals=nutritionTotals(meals),targets=state.targets;
     const water=num(state.waterByDate[dateKey()]);
@@ -176,6 +210,7 @@
     const pct=targets.calories?clamp(totals.calories/targets.calories*100):0;
     const circumference=314.16;
     return "<div class='page-heading'><div><span class='eyebrow'>YOUR PERSONAL FITNESS SPACE</span><h1>Good to see you, "+safe(first)+".</h1><p>Small consistent actions. Clear progress. Your snapshot for today.</p></div><div class='heading-actions'><button class='btn btn-secondary' data-action='add-meal'>＋ Log food</button><button class='btn btn-primary' data-action='add-workout'>＋ Log workout</button></div></div>"+
+      renderVisualHero()+renderCoachNotes()+
       "<div class='grid stats-grid'>"+statCard("Calories consumed",Math.round(totals.calories).toLocaleString("en-IN"),"kcal",Math.round(pct)+"% of daily target","◉")+statCard("Protein so far",round(totals.protein),"g","Target: "+targets.protein+" g","✳")+statCard("Training sessions",workouts.length,"today",totalSets+" working sets today","↗")+statCard("Latest weigh-in",lastWeight?round(lastWeight.weight):"—",lastWeight?state.profile.unit:"",lastWeight?"Recorded "+prettyDate(lastWeight.date):"Add your first check-in","⌁")+"</div>"+
       "<div class='grid dashboard-grid'><div><section class='panel'><div class='panel-head'><div><h2>Nutrition at a glance</h2><div class='panel-sub'>Today's intake compared with your targets</div></div><button class='inline-link' data-page='nutrition'>View nutrition →</button></div><div class='macro-layout'><div class='calorie-ring'><svg viewBox='0 0 120 120' aria-hidden='true'><circle class='ring-track' cx='60' cy='60' r='50'></circle><circle class='ring-progress' cx='60' cy='60' r='50' stroke-dasharray='"+(circumference*pct/100)+" "+circumference+"'></circle></svg><div class='ring-center'><strong>"+Math.round(totals.calories).toLocaleString("en-IN")+"</strong><span>kcal eaten</span><small>"+Math.max(0,Math.round(targets.calories-totals.calories))+" kcal left</small></div></div><div class='macro-list'>"+macroRow("Protein",totals.protein,targets.protein,"","g")+macroRow("Carbs",totals.carbs,targets.carbs,"carbs","g")+macroRow("Fat",totals.fat,targets.fat,"fat","g")+"</div></div></section>"+
       "<section class='panel'><div class='panel-head'><div><h2>Today's meals</h2><div class='panel-sub'>"+meals.length+" entries added</div></div><button class='inline-link' data-action='add-meal'>＋ Add meal</button></div>"+renderMealItems(meals)+"</section>"+
