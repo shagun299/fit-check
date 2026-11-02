@@ -1,0 +1,6 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100" role="img" aria-label="FitCheck mark">
+  <defs><linearGradient id="lime" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#e4ff9b"/><stop offset="1" stop-color="#9bd84f"/></linearGradient></defs>
+  <rect x="4" y="4" width="92" height="92" rx="27" fill="url(#lime)"/>
+  <path d="M27 72 42 28h38l-7 14H52l-3 9h22l-6 14H44l-4 11z" fill="#142016"/>
+  <path d="m52 66 10 10 20-23" fill="none" stroke="#142016" stroke-width="7" stroke-linecap="round" stroke-linejoin="round"/>
+</svg>
