@@ -1,51 +1,49 @@
 # FitCheck
 
-A personal gym, nutrition and progress tracker built with plain HTML, CSS and JavaScript.
+A local-first personal gym, nutrition and body-recomposition tracker built with HTML, CSS and vanilla JavaScript.
 
 ## Features
 
-- Daily dashboard for calories, protein, carbs, fat and water.
-- Food diary with meal type, time and macro values.
-- Workout log with muscle focus, session duration, exercises, sets, reps and load.
-- Routine studio with exercise libraries for chest, back, shoulders, biceps, triceps, legs and core; save, edit, reuse and delete your own training-day templates.
-- Custom exercises, routine notes, and detailed editable workout history.
-- Weigh-in history and a simple weight-trend chart.
-- Daily, weekday and one-time reminders for water, meals, workouts and supplements, with browser notifications while FitCheck is open.
-- Premium typography refresh using Sora headings and Inter interface text.
-- Editable profile and daily targets.
-- JSON export/import so you can back up or move your records.
-- Responsive layout and basic offline app-shell caching.
+- Daily dashboard for calories, protein, carbs, fat, water and weekly consistency.
+- Food library with common Indian foods and estimated per-serving macros.
+- Custom foods, saved meal presets, meal diary and a simple future meal planner.
+- Workout routine builder with five exercise options for chest, back, shoulders, biceps, triceps, legs and core.
+- Individual working-set logging with reps and weight per set.
+- Previous-session comparison, heaviest recorded set by exercise, personal records and workout calendar.
+- Editable workout history and reusable routines.
+- Weigh-ins, body measurements, weight chart and weekly insights.
+- Daily, weekday and one-time reminders with browser notifications while FitCheck is open.
+- Dark and light themes.
+- Responsive phone, tablet and desktop layouts.
+- JSON export/import backup and a basic offline app shell.
 
 ## Run locally
 
-Open `index.html` in a browser. For install/offline features, use a local static server or publish with GitHub Pages.
+Open `index.html` in a browser. For install/offline features and notifications, use a local static server or publish with GitHub Pages.
 
 ## Publish with GitHub Pages
 
-1. Open this repository on GitHub.
+1. Open this repository.
 2. Go to **Settings → Pages**.
-3. Under **Build and deployment**, choose **Deploy from a branch**.
+3. Under Build and deployment, choose **Deploy from a branch**.
 4. Select branch **main** and folder **/(root)**, then save.
-5. After GitHub finishes publishing, open:
+5. Open https://shagun299.github.io/fit-check/ after the deployment finishes.
 
-   https://shagun299.github.io/fit-check/
+## Privacy and data
 
-The site code is public because the repository is public. Your personal entries are **not** written to GitHub: meals, workouts, weigh-ins and settings are stored in local browser storage on the device/browser you use.
+The source code is public because the repository is public. Your meals, workouts, routines, reminders and measurements are stored in local browser storage and are not committed to GitHub.
 
-## Important data note
-
-- Reminder checks run while FitCheck is open in a browser tab or installed app. Notifications require browser permission.
-- This static local-first version cannot send scheduled alerts while the browser is completely closed.
 - Data does not automatically sync between devices or browsers.
-- Export a JSON backup from **Settings → Your data** before clearing browser storage or switching devices.
-- Import that backup on another browser to restore it.
-- Clearing browser/site data may erase the locally stored records.
-- Calorie, macro and water targets are editable starter values, not medical or individualized recommendations.
+- Export a JSON backup before switching browsers or clearing site data.
+- Food library values are estimates per serving. Check package labels or a reliable nutrition source for accuracy.
+- Browser reminder checks work while FitCheck is open. This static version cannot send scheduled alerts with the browser completely closed.
+- Calorie, macro and hydration targets are editable placeholders, not individualized medical advice.
 
 ## Project files
 
 - `index.html` – app structure
-- `style.css` – responsive visual design
-- `app.js` – tracking, calculations and local storage
+- `style.css` – responsive theme and layout
+- `app.js` – workouts, nutrition, reminders, analytics and local storage
 - `manifest.webmanifest` – installable app metadata
-- `sw.js` – app-shell cache for offline launch
+- `sw.js` – offline app-shell caching
+- `icon.svg` – app icon
