@@ -231,7 +231,7 @@
     const exercises=workout?(workout.exercises||[]):[];
     const rows=exercises.length?exercises.map(exerciseRow).join(""):exerciseRow();
     const focuses=["Chest","Back","Shoulders","Biceps","Triceps","Legs","Core","Full body","Cardio","Other"];
-    return "<form id='workout-form' data-editing='"+safe(workout?workout.id:"')+"'><div class='form-grid'><div class='form-field'><label for='workout-name'>Session name</label><input id='workout-name' name='name' required maxlength='60' placeholder='e.g. Chest day' value='"+safe(workout?workout.name:"")+"'></div>"+
+    return "<form id='workout-form' data-editing='"+safe(workout?workout.id:"")+"'><div class='form-grid'><div class='form-field'><label for='workout-name'>Session name</label><input id='workout-name' name='name' required maxlength='60' placeholder='e.g. Chest day' value='"+safe(workout?workout.name:"")+"'></div>"+
       "<div class='form-field'><label for='workout-muscle'>Focus</label><select id='workout-muscle' name='muscle'>"+focuses.map(n=>"<option "+(workout&&workout.muscle===n?"selected":"")+">"+n+"</option>").join("")+"</select></div>"+
       "<div class='form-field'><label for='workout-duration'>Duration (minutes)</label><input id='workout-duration' name='duration' type='number' min='0' max='600' value='"+safe(workout?workout.duration:60)+"'></div>"+
       "<div class='form-field'><label for='workout-date'>Date</label><input id='workout-date' name='date' type='date' value='"+safe(workout?workout.date:dateKey())+"' required></div></div>"+
@@ -430,7 +430,7 @@
   function mealForm(food=null) {
     const now=new Date(),time=String(now.getHours()).padStart(2,"0")+":"+String(now.getMinutes()).padStart(2,"0");
     const name=food?food.name:"",cal=food?food.calories:"",protein=food?food.protein:0,carbs=food?food.carbs:0,fat=food?food.fat:0;
-    return "<form id='meal-form' data-food-id='"+safe(food?food.id:"')+"'><div class='form-grid'><div class='form-field full'><label for='meal-name'>Food or meal name</label><input id='meal-name' name='name' required maxlength='70' value='"+safe(name)+"' placeholder='e.g. Paneer rice bowl'></div>"+
+    return "<form id='meal-form' data-food-id='"+safe(food?food.id:"")+"'><div class='form-grid'><div class='form-field full'><label for='meal-name'>Food or meal name</label><input id='meal-name' name='name' required maxlength='70' value='"+safe(name)+"' placeholder='e.g. Paneer rice bowl'></div>"+
       "<div class='form-field'><label for='meal-category'>Meal type</label><select id='meal-category' name='category'><option>Breakfast</option><option>Lunch</option><option>Snack</option><option>Dinner</option></select></div><div class='form-field'><label for='meal-date'>Date</label><input id='meal-date' name='date' type='date' value='"+dateKey()+"' required></div>"+
       "<div class='form-field'><label for='meal-time'>Time</label><input id='meal-time' type='time' name='time' value='"+time+"'></div><div class='form-field'><label for='meal-quantity'>Servings / quantity</label><input id='meal-quantity' name='quantity' type='number' min='0.1' max='30' step='0.1' value='1'></div>"+
       "<div class='form-field'><label for='meal-calories'>Calories (kcal)</label><input id='meal-calories' name='calories' type='number' min='0' step='1' value='"+safe(cal)+"' placeholder='Optional'></div><div class='form-field'><label for='meal-protein'>Protein (g)</label><input name='protein' type='number' min='0' step='0.1' value='"+safe(protein)+"'></div>"+
